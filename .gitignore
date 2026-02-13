@@ -29,3 +29,6 @@ dist/
 # Folders
 temp_test_files/
 
+# Files
+multi_exp_function_example.pdf
+multi_exp_function_example.txt

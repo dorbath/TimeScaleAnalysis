@@ -14,11 +14,11 @@ def gaussian_smooth(data, sigma, mode='nearest'):
     """Perform Gaussian smoothing/filter
 
     Parameters
-    ---------- 
+    ----------
     data: np.array (1D), data to be smoothed
     sigma: float, standard deviation for Gaussian kernel
     mode: str, behavior at the boundaries of the array
-    
+
     Return
     ------
     smoothed data as np.array
@@ -31,7 +31,7 @@ def save_npArray(array, folder_path, file_name, comment=''):
     """Store a np.array in 'file_path/file_name'
 
     Parameters
-    ---------- 
+    ----------
     array: np.array, 1D or 2D array to be saved
     folder_path: str, path to folder in which file is stored
     file_name: str, name of file,
@@ -113,14 +113,14 @@ def fit_log_log_time_trace(log_time_trace, times, fit_range, popt=None):
 
 def calculate_ensemble_average_change(data, abs_val=True):
     """Derive the ensemble average change of a given set of distances (e.g. a cluster)
-    
+
     Parameters
     ----------
     data: np.array, data which is used to derive ensemble average change of specific column
     column_name: str, define the name of the column
     n_steps: int, number of steps in data
     abs_val: boolean, selects if absolute difference is derived (default:True)
-    
+
     Return
     ------
     ensemble_averaged_change: np.array, time trace of averaged change
@@ -156,7 +156,7 @@ def generate_multi_exp_timetrace(offset, timescales, amplitude, n_steps, sigma=N
     amplitude: np.array, size of each of the timescales
     n_steps: int, length of exp function
     sigma: float, standard deviation for Gaussian noise rugging the data (default: None, no noise)
-    
+
     Return
     ------
     multiExpFunc: np.array, reconstructed multi-exponential function (with optional noise)"""
@@ -169,14 +169,24 @@ def generate_multi_exp_timetrace(offset, timescales, amplitude, n_steps, sigma=N
         exp_val = times / timescales[k]
         multiExpFunc -= amplitude[k]*np.exp(-exp_val)
     if sigma is not None:
-        data_points = multiExpFunc + np.random.normal(0, sigma, size=multiExpFunc.shape)
-    
+        data_points = multiExpFunc + np.random.normal(
+            0, sigma, size=multiExpFunc.shape
+        )
+
     plt.plot(times, data_points, c='k', lw=0, marker='o', markersize=0.1)
     plt.plot(times, multiExpFunc, c='tab:red')
     plt.xscale('symlog', subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=1)
     plotting.save_fig('multi_exp_function_example.pdf')
-    save_npArray(np.column_stack(data_points), '.', 'multi_exp_function_example.txt', 
-                 comment=f'Multi-exponential function with noise\n Columns: time [ns], S(t) [nm]\n Parameters: offset={offset}, timescales={timescales}, amplitude={amplitude}, sigma={sigma}')
+    save_npArray(
+        np.column_stack(data_points),
+        ".",
+        "multi_exp_function_example.txt",
+        comment=(
+            f"Multi-exponential function with noise\n"
+            f"Columns: time [ns], S(t) [nm]\n Parameters: "
+            f"offset={offset}, timescales={timescales}, "
+            f"amplitude={amplitude}, sigma={sigma}")
+            )
 
     return data_points
 

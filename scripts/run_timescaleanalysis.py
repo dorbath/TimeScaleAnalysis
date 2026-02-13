@@ -130,9 +130,14 @@ def main(data_path, sim_file, fit_n_decades, output_path):
             plt.plot(regPara, P_Bayes, marker='+', ms=2.5, c='k', lw=1.3)
             plt.xscale('symlog', subs=[2,3,4,5,6,7,8,9], linthresh=1e-10)
             utils.save_fig(f'{output_path}/Bayesian_regPara_{idxObs}.pdf')
+        # Provide single observable to TSA class
         tsa.options['temp_mean'] = utils.gaussian_smooth(temp_mean, 6)
-        tsa.options['temp_sem'] = utils.gaussian_filter(temp_sem, 6)
-        lag_rates = tsa.perform_tsa(regPara=100, startTime=1e-1)
+        tsa.options['temp_sem'] = utils.gaussian_smooth(temp_sem, 6)
+        lag_rates = tsa.perform_tsa(
+            regPara=1,
+            startTime=1e-1,
+            posVal=True
+        )
         temp_mean /= scaling_factor
         temp_sem /= scaling_factor
         tsa.spectrum[:, 1] /= scaling_factor

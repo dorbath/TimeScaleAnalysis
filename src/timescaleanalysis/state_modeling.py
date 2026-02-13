@@ -3,7 +3,6 @@
 import numpy as np
 
 
-
 def generate_state_trajectory(trajectory, states, state_boundaries, fill_undef_states=True, finalFrameFinalState=True):
     """Generate state trajectory from simulated trajectory
     HERE: the trajectory must be of a single parameter
@@ -25,7 +24,7 @@ def generate_state_trajectory(trajectory, states, state_boundaries, fill_undef_s
         else:
             lb, ub = sb[0], sb[1]
         temp_state_traj[(trajectory > lb) & (trajectory < ub)] = states[idxS]
-    
+
     # Select frames in intermediate states
     temp_idx_transition = np.where(temp_state_traj == -1)
     # If first frame is not in a state, set it to the first populated one
@@ -34,7 +33,7 @@ def generate_state_trajectory(trajectory, states, state_boundaries, fill_undef_s
     if finalFrameFinalState:
         # NOTE: This is only needed if the systems ends always in the final state
         temp_state_traj[-1] = states[-1]
-    
+
     # Select frames in intermediate states again due to overwriting of first and last frame
     temp_idx_transition = np.where(temp_state_traj == -1)
     # Smooth out intermediate positions between states

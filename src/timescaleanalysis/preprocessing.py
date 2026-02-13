@@ -1,9 +1,7 @@
-from threading import local
 import warnings
 
 from genericpath import isfile, isdir
 import numpy as np
-import timescaleanalysis.utils as utils
 import os
 import json
 
@@ -44,7 +42,7 @@ class Preprocessing:
         self.input_directories = None
 
         self.options = self.DEFAULTS | kwargs
-    
+
     def generate_input_trajectories(self):
         """Get all files/trajectories in 'data_path' with the correct prefix.
         All files that fulfill data_path* are taken as input.
@@ -63,7 +61,7 @@ class Preprocessing:
             ]
         else:
             self.input_directories = [
-                path for path in os.listdir(self.folder_prefix) 
+                path for path in os.listdir(self.folder_prefix)
                 if path.startswith(folder_suffix)
             ]
 
@@ -112,7 +110,8 @@ class Preprocessing:
 
             Return
             ------
-            data_np: np.array, contains loaded data split into columns if provided
+            data_np: np.array, contains loaded data.
+                     Each column corresponds to one observable
             """
             if precision not in (np.float16, np.float32, np.float64):
                 raise TypeError(
@@ -144,7 +143,7 @@ class Preprocessing:
                     lineno=0
                 )
             return temp_load
-        
+
         def _load_averaged_trajectory():
             if len(self.input_directories) != 1:
                 raise ValueError(
@@ -163,8 +162,9 @@ class Preprocessing:
                     " first column with data points, "
                     "second with standard error of the mean (SEM)!"
                 )
-
-            self.data_arr.append(temp_traj)  # data points in first column, SEM in second column
+            # Data points are in first column
+            # Standard error of the mean in second column
+            self.data_arr.append(temp_traj)
             self.n_steps = len(temp_traj)
 
         def _load_concatenated_trajectories(n_traj_conc: int):
@@ -182,12 +182,17 @@ class Preprocessing:
                 )
                 if len(temp_traj)/n_traj_conc < 1:
                     raise Exception(
-                        f"Number of trajectories to concatenate (n_traj_conc={n_traj_conc}) is larger than the number of frames in the trajectory ({len(temp_traj)})!"
+                        f"The number of trajectories to concatenate "
+                        f"(n_traj_conc={n_traj_conc}) is larger than the "
+                        f"number of frames in a trajectory ({len(temp_traj)})!"
                     )
                 length_per_traj = int(len(temp_traj)/n_traj_conc)
                 for i in range(n_traj_conc):
-                    self.data_arr.append(temp_traj[i*length_per_traj:(i+1)*length_per_traj])
-                    self.n_steps = length_per_traj if length_per_traj > self.n_steps else self.n_steps
+                    self.data_arr.append(temp_traj[
+                        i*length_per_traj:(i+1)*length_per_traj
+                    ])
+                    if length_per_traj > self.n_steps:
+                        self.n_steps = length_per_traj
 
         def _load_multiple_trajectories():
             for inDir in self.input_directories:
@@ -198,10 +203,13 @@ class Preprocessing:
                     np.float32
                 )
                 self.data_arr.append(temp_traj)
-                self.n_steps = len(temp_traj) if len(temp_traj) > self.n_steps else self.n_steps
+                if len(temp_traj) > self.n_steps:
+                    self.n_steps = len(temp_traj)
 
         if averaged and n_traj_conc is not None:
-            raise Exception("Provide either 'averaged=True' or 'n_traj_conc', not both!")
+            raise Exception(
+                "Provide either 'averaged=True' or 'n_traj_conc', not both!"
+            )
 
         if averaged:
             _load_averaged_trajectory()
@@ -223,23 +231,28 @@ class Preprocessing:
             self.derive_average_trajectory()
 
     def reshape_same_length(self, insert_nan: bool = True):
-        """Ensure that all trajectories are of same length by extending/appending constant values
+        """Ensure that all trajectories are of same length
+        by extending/appending constant values.
+        This makes calculations with numpy much more efficient.
 
         Parameters
         ----------
-        insert_nan: bool, (false)-> extend final frame, (true) append np.nan values"""
+        insert_nan: bool, (false)-> extend final frame of trajectory,
+                          (true)-> append np.nan values (default)"""
 
         def _reshape_single_trajectory(
                 trajectory: np.array,
                 n_steps: int,
                 insert_nan: bool = True):
-            """Reshape a single trajectory to match the shape of the longest one
+            """Reshape a single trajectory to match the shape of the longest
+               trajectory by extending/appending constant values.
 
             Parameters
             ----------
             trajectory: array, single trajectory
             n_steps: int, length of longest trajectory
-            insert_nan: bool, (false)-> extend final frame, (true) append np.nan values
+            insert_nan: bool, (false)-> extend final frame of trajectory,
+                              (true)-> append np.nan values (default)
 
             Return
             ------
@@ -279,8 +292,14 @@ class Preprocessing:
         """"Average data for each column"""
         # Correct number of simulations at each timestep (relevant if reshaped)
         n_sim_not_nan = np.sum(~np.isnan(self.data_arr), axis=0)
-        self.data_mean = np.nanmean(np.array(self.data_arr), axis=0, dtype=np.float32)
-        self.data_sem = np.nanstd(np.array(self.data_arr), axis=0, ddof=0, dtype=np.float32)/np.sqrt(n_sim_not_nan)
+        self.data_mean = np.nanmean(
+            np.array(self.data_arr),
+            axis=0, dtype=np.float32
+        )
+        self.data_sem = np.nanstd(
+            np.array(self.data_arr),
+            axis=0, ddof=0, dtype=np.float32
+        )/np.sqrt(n_sim_not_nan)
 
     def get_time_array(self):
         """Derive time array for the data"""
@@ -299,26 +318,33 @@ class Preprocessing:
                         # get steps at which coordinates are saved
                         coord_step = int(ln.strip().split()[2])
             dt = time_step*coord_step
-            self.options['times'] = np.arange(0, self.n_steps, 1, dtype=np.float64)*dt
+            self.options['times'] = np.arange(
+                0, self.n_steps, 1, dtype=np.float64
+            )*dt
 
         if self.options['sim_file'] is not None:
             if not isfile(self.options['sim_file']):
                 raise Exception(
-                    f'File with simulation parameters {self.options['sim_file']} does not exist!'
+                    f"File with simulation parameters "
+                    f"{self.options['sim_file']} does not exist!"
                 )
             _load_simulation_parameters()
         else:
-            print("No simulation parameters provided, time array is generated.")
-            self.options['times'] = np.arange(0, self.n_steps, 1, dtype=np.float64)
+            print("No simulation parameters provided, generate time array.")
+            self.options['times'] = np.arange(
+                0, self.n_steps, 1, dtype=np.float64
+            )
 
     def save_preprocessed_data(self, output_path: str = None):
         """Save preprocessed data as json file.
         Preprocessing step can be skipped with saved files
-        
+
         Parameters
         ----------
-        output_path: str, path to save preprocessed data (optional, default: None)
-                     If None, data is saved in folder_prefix/preprocessed_data/preprocessed_data
+        output_path: str, path to save preprocessed data
+                     (optional, default: None)
+                     If None, data is saved in path
+                     folder_prefix/preprocessed_data/preprocessed_data
         """
         if not output_path:
             output_path = self.folder_prefix+'/preprocessed_data/'
@@ -339,13 +365,16 @@ class Preprocessing:
                 filename=output_path+'/preprocessed_data.json',
                 lineno=0
             )
-        if self.data_mean is None or self.data_sem.any() is None or self.options['times'] is None:
+        if (self.data_mean is None or
+                self.data_sem.any() is None or
+                self.options['times'] is None):
             raise Warning(
                 "Not all data is correctly prepared!\n"
-                "One of self.data_mean or self.data_sem is not correctly prepared."
+                "One of self.data_mean, self.data_sem or "
+                "self.options['times'] is not correctly prepared."
             )
-        
-        # Verify correct dimensions and shape of data_mean, data_sem and time array
+
+        # Verify correct dimensions and shape of data_mean, data_sem and times
         if not np.shape(self.data_mean) == np.shape(self.data_sem):
             raise ValueError(
                 "Data mean and sem must have the same shape! "
@@ -369,7 +398,9 @@ class Preprocessing:
         safety_file = output_path+'/preprocessed_data.json'
         safety_counter = 1
         while isfile(safety_file):
-            safety_file = f"{output_path}/preprocessed_data_{safety_counter}.json"
+            safety_file = (
+                f"{output_path}/preprocessed_data_{safety_counter}.json"
+            )
             safety_counter += 1
         if safety_counter > 1:
             output_file = safety_file
