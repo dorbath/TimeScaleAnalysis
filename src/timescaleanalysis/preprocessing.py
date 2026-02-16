@@ -26,10 +26,12 @@ class Preprocessing:
     sim_file: str, directory to file with simulation parameters
             (usually .mdp file, entries 'dt = ' and 'nstxtcout = ' are needed)
     time: array, time vector of the data
+    label_file: str, file directory with label for each observable in the data
     """
     DEFAULTS = {
         "sim_file": None,
         "times": None,
+        "label_file": None,
     }
 
     def __init__(self, data_dir, **kwargs):
@@ -394,6 +396,32 @@ class Preprocessing:
             self.data_mean = np.array([self.data_mean], dtype=np.float32).T
             self.data_sem = np.array([self.data_sem], dtype=np.float32).T
 
+        # Load label file
+        if self.options['label_file'] is not None:
+            if not isfile(self.options['label_file']):
+                raise Exception(
+                    f"Label file {self.options['label_file']} does not exist!"
+                )
+            labels_lst = np.loadtxt(
+                self.options['label_file'],
+                dtype=str,
+                comments='#',
+                ndmin=1
+            )
+            n_observables = self.data_mean.shape[1]
+            if len(labels_lst) != self.data_mean.shape[1]:
+                raise ValueError(
+                    "Number of labels in label file must match number of "
+                    "observables in data! "
+                    f"Number of labels: {len(labels_lst)}, "
+                    f"Number of observables: {n_observables}"
+                )
+        else:
+            labels_lst = np.array(
+                [f'x{i+1}' for i in range(self.data_mean.shape[1])],
+                dtype=str
+            )
+
         # Make sure no file is overwritten
         safety_file = output_path+'/preprocessed_data.json'
         safety_counter = 1
@@ -414,4 +442,5 @@ class Preprocessing:
                 'data_mean': self.data_mean.tolist(),
                 'data_sem': self.data_sem.tolist(),
                 'times': self.options['times'].tolist(),
+                'labels': labels_lst.tolist()
             }, f)

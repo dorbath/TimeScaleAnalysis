@@ -132,10 +132,21 @@ def plot_value_heatmaps(dataframes, col, times, output_path=None):
     save_fig(f'{output_path}/time_dependent_distribution_{col}.pdf')
 
 
-def fit_log_periodic_oscillations(log_time_trace, times, fit_range, popt=None):
+def fit_log_periodic_oscillations(
+        log_time_trace: np.array,
+        times: np.array,
+        fit_range: list,
+        popt: tuple = None):
     """Fit the time trace with a power law (t^a0) and
     logarithmic oscillations with period tau_log.
-    The fit function is sa + sb*t^a0 + sc*t^a0 * cos(2pi/tau log10(t) + phi)
+    A system with hierarchical dynamics may yield equidistant timescales/peaks
+    in the timescale spectrum (on a log-time axis).
+    This will result in logarithmic oscillations superimposed by a power law
+    which describes the diffusive dynamics.
+
+    The fit function is
+
+            sa + sb*t^a0 + sc*t^a0 * cos(2pi/tau log10(t) + phi)
 
     Parameters
     ----------
@@ -151,11 +162,13 @@ def fit_log_periodic_oscillations(log_time_trace, times, fit_range, popt=None):
             s_b: amplitude of power law
             s_c: amplitude of logarithmic oscillations
             phi: phase shift of logarithmic oscillations
-
+    filename: str, name of file to save fit parameters (default: None, no saving)
     Return
     ------
     ax1: matplotlib.axes, main plot axis
     ax_insert: matplotlib.axes, inset plot axis
+    fitParameters: tuple, optimized fit parameters (a0, tau, s_a, s_b, s_c, phi)
+            with their standard deviations from the covariance matrix
     """
 
     def _fit_log_osc(x, a0, tau, sa, sb, sc, phi): 
@@ -168,7 +181,8 @@ def fit_log_periodic_oscillations(log_time_trace, times, fit_range, popt=None):
         warnings.warn(
             "Negative values in 'log_time_trace'! "
             "This may lead to problems in the fit and plotting. "
-            "It is recommended to shift the time trace to positive values."
+            "It is recommended to shift the time trace to positive values.",
+            category=Warning,
         )
 
     fig, ax1 = plt.subplots()
@@ -183,8 +197,22 @@ def fit_log_periodic_oscillations(log_time_trace, times, fit_range, popt=None):
     fit_times = times[lower_bound:upper_bound]
     fit_time_trace = log_time_trace[lower_bound:upper_bound]
     if popt is None:
-        # TODO: add better initial guess if None provided
-        popt = (0.2, 2.0, 0.1, 10, -8, -2.7)
+        a0 = 0.5  # diffusive process
+        tau_log = 2.0  # 1/2 oscillations per decade
+        sa = fit_time_trace[0]
+        sb = 1.0
+        sc = 1.0
+        phi = -np.pi/2
+        warnings.warn(
+            "No initial guess for fit parameters provided! "
+            "This may lead to problems in the log oscillation fit. "
+            "Initial values are guess as follows: "
+            f"a0={a0}, tau_log={tau_log}, "
+            f"sa={sa:.4f}, "
+            f"sb={sb}, sc={sc}, phi={phi:.4f}.",
+            category=Warning,
+        )
+        popt = (a0, tau_log, sa, sb, sc, phi)
 
     popt, pcov = curve_fit(
         _fit_log_osc,
@@ -193,9 +221,6 @@ def fit_log_periodic_oscillations(log_time_trace, times, fit_range, popt=None):
         p0=popt,
         maxfev=10000
     )
-    # TODO: if verbose:; safe fit parameters
-    for idxP, p in enumerate(popt):
-        print(np.around(p, 4), np.around(np.sqrt(np.diag(pcov))[idxP], 5))
 
     ax1.plot(times, log_time_trace, label=r'$\langle r(t)\rangle$ [nm]', c='k')
     ax1.plot(fit_times, _fit_log_osc(fit_times, *popt), c='tab:red')
@@ -203,7 +228,6 @@ def fit_log_periodic_oscillations(log_time_trace, times, fit_range, popt=None):
     _log_axis(ax1, axis='xy')
     plt.tick_params(direction='in', which='both')
 
-    # TODO: add better insert plot with confidence intervals for fit parameters
     ax_insert = ax1.inset_axes([0.5, 0.05, 0.45, 0.45])
     ax_insert.plot(
         times,
@@ -224,7 +248,7 @@ def fit_log_periodic_oscillations(log_time_trace, times, fit_range, popt=None):
     ax_insert.tick_params(labelsize=0, length=2)
     ax_insert.tick_params(direction='in', which='both', labelsize=8)
 
-    return ax1, ax_insert
+    return ax1, ax_insert, np.vstack([popt, np.sqrt(np.diag(pcov))])
 
 
 def get_alpha_cmap(cmap, alpha_fraction=0.1):
@@ -239,6 +263,24 @@ def get_alpha_cmap(cmap, alpha_fraction=0.1):
     #alpha[-alpha_n:] = np.linspace(1, 0, alpha_n) #elim low values
     cmap_alpha[:, -1] = alpha
     return clrs.ListedColormap(cmap_alpha)
+
+
+def pretty_label(label, prefix=None):
+    """Make y-axis label prettier for scientific plotting
+    In many cases, the observable is a distance or angle with the label
+    being stored as X_Y (e.g. atoms X,Y)
+
+    Parameters
+    ----------
+    label: str, label to be made more scientific
+    prefix: str, prefix to be added to label (e.g. 'd' for distance)
+    """
+    if '_' in label:
+        label = '('+label+')'
+    if prefix:
+        label = prefix + label
+    label = label.replace('_', ',')
+    return label
 
 
 def _log_axis(ax, axis, subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=0.01):

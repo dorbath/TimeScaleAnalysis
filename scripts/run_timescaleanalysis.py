@@ -49,6 +49,14 @@ plotting._define_color_cycle()
     help='mdp file used to simulate the trajectories',
 )
 @click.option(
+    '--label-file',
+    '-label',
+    'label_file',
+    type=click.STRING,
+    default=None,
+    help='mdp file used to simulate the trajectories',
+)
+@click.option(
     '--number-decades',
     '-nD',
     'fit_n_decades',
@@ -64,7 +72,7 @@ plotting._define_color_cycle()
     type=click.Path(),
     help='Path to output files',
 )
-def main(data_path, sim_file, fit_n_decades, output_path):
+def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     """All of this is so far done to work for the 1D model
     The aim is to have separate files 'TimeScaleAnalysis_X' for the different systems
     that all use the same class but different preprocessing steps
@@ -92,7 +100,11 @@ def main(data_path, sim_file, fit_n_decades, output_path):
     #                                   amplitude=[0.2, 0.5, 1.0], n_steps=100000, sigma=0.01)
     preP = None
     # Perform preprocessing
-    preP = Preprocessing(data_path, sim_file=sim_file)
+    preP = Preprocessing(
+        data_path,
+        sim_file=sim_file,
+        label_file=label_file
+    )
     preP.generate_input_trajectories()
     preP.load_trajectories()
     preP.get_time_array()
@@ -117,6 +129,7 @@ def main(data_path, sim_file, fit_n_decades, output_path):
     for idxObs in range(tsa.data_mean.shape[1]):
         temp_mean = tsa.data_mean[:, idxObs]
         temp_sem = tsa.data_sem[:, idxObs]
+        temp_label = tsa.labels[idxObs]
         # This is done to accomplish a more precise fit as distances can be rather small in their change
         scaling_factor = 30
         temp_mean *= scaling_factor
@@ -147,13 +160,34 @@ def main(data_path, sim_file, fit_n_decades, output_path):
                                      tsa.n_steps)
         ax1.set_xlim(1e-1, 1e6)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
-        ax1.set_ylabel(r'$\langle r(t)\rangle$ [nm]')
+        temp_label = plotting.pretty_label(temp_label, prefix='d')
+        ax1.set_ylabel(f'{temp_label}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{idxObs}.pdf')
 
-        ax1, ax_insert = plotting.fit_log_periodic_oscillations(temp_mean, tsa.times, [1e0, 1e5])
-        ax1.set_xlim(1e-1, 1e6)
-        ax_insert.set_xlim(1e-1, 1e6)
-        plotting.save_fig(f'{output_path}/log_periodic_fit_{idxObs}.pdf')
+        #######################################################################
+        # This part is only of interest for log-periodic oscillation studies  #
+        #fit_range = [1e0, 1e5]
+        #ax1, ax_insert, fitParameters = plotting.fit_log_periodic_oscillations(
+        #    temp_mean,
+        #    tsa.times,
+        #    fit_range
+        #)
+        #ax1.set_xlim(1e-1, 1e6)
+        #ax_insert.set_xlim(1e-1, 1e6)
+        #plotting.save_fig(f'{output_path}/log_periodic_fit_{idxObs}.pdf')
+        #utils.save_npArray(
+        #    fitParameters,
+        #    output_path,
+        #    f'log_periodic_{idxObs}_FitParameters.txt',
+        #    comment=(
+        #        f'Fit parameters of log-periodic oscillation fit for observable {tsa.labels[idxObs]}:\n'
+        #        f'First line are the fit parameters, second line their standard error.\n'
+        #        f'Columns: a0, tau, sa, sb, sc, phi\n'
+        #        f'Fit function: f(t) = sa + sb*t^a0 + sc*t^a0*cos(2pi/tau*log10(t)+phi)\n'
+        #        f'Fit range: {fit_range[0]} to {fit_range[1]}.'
+        #    )
+        #)
+        #######################################################################
 
         dynamic_content_arr = np.add(dynamic_content_arr, tsa.spectrum**2)
     sys.exit()

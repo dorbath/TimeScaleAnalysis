@@ -189,7 +189,8 @@ class TimeScaleAnalysis:
             warnings.warn(
                 f"Expected 'fit_n_decades' to be type int, but got "
                 f"{type(fit_n_decades)}. Conversion  into 'int' "
-                f"may result in round-off errors."
+                f"may result in round-off errors.",
+                category=Warning,
             )
         self.data_file = data_file
         self.fit_n_decades = int(fit_n_decades)
@@ -198,6 +199,7 @@ class TimeScaleAnalysis:
         self.data_sem = None
         self.n_steps = 0
         self.times = None
+        self.labels = None
         self.spectrum = None
 
         self.options = self.DEFAULTS | kwargs
@@ -206,12 +208,13 @@ class TimeScaleAnalysis:
         """Load preprocessed data with the correct shape"""
         with open(self.data_file) as f:
             data_json = json.load(f)
-        for key in ['data_mean', 'data_sem', 'times']:
+        for key in ['data_mean', 'data_sem', 'times', 'labels']:
             if key not in data_json.keys():
                 raise KeyError(f"Expected data file to contain '{key}' key!")
         self.data_mean = np.array(data_json['data_mean'], dtype=np.float32)
         self.data_sem = np.array(data_json['data_sem'], dtype=np.float32)
         self.times = np.array(data_json['times'], dtype=np.float32)
+        self.labels = np.array(data_json['labels'], dtype=str)
         self.n_steps = len(self.times)
 
     def interpolate_data_points(self, iterations: int = 1):
@@ -258,7 +261,8 @@ class TimeScaleAnalysis:
             warnings.warn(
                 f"Expected 'iterations' to be type int, but got "
                 f"{type(iterations)}. Conversion  into 'int' "
-                f"may result in round-off errors."
+                f"may result in round-off errors.",
+                category=Warning,
             )
         iterations = int(iterations)
         for _ in range(iterations):
