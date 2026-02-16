@@ -361,12 +361,8 @@ class Preprocessing:
             os.makedirs(output_path)
 
         if isfile(output_path+'/preprocessed_data.json'):
-            warnings.showwarning(
-                "Preprocessed data already exists, adjusting saving file!",
-                category=Warning,
-                filename=output_path+'/preprocessed_data.json',
-                lineno=0
-            )
+            print(("Preprocessed data file already exists! "
+                  "Adjusting output file!"))
         if (self.data_mean is None or
                 self.data_sem.any() is None or
                 self.options['times'] is None):

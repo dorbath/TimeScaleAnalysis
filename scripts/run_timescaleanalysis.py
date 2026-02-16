@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 
-"""The dynamical content of PDZ3 contact distances is derived for multiple distances.
-This is a new version of 'contactDistance_ensemble_averaged_change.py' in 'python_scripts/' using Classes in order to be used by others
+"""Fundamental script to perform a timescale analysis.
+All required steps are outlined, including:
+data generation, preprocess, timescale analysis, plotting and
+saving of results.
+
+In several intermediate steps, the user can adjust parameters
+as they please, e.g. the used labels for plots, time steps etc.
 """
 
 __author__ = "Emanuel Dorbath"
@@ -10,7 +15,6 @@ from genericpath import isfile, isdir
 import numpy as np
 import matplotlib.pyplot as plt
 import prettypyplot as pplt
-import os
 import sys
 import timescaleanalysis.utils as utils
 import timescaleanalysis.plotting as plotting
@@ -25,7 +29,6 @@ rc_fonts = {'figure.figsize': (plt.rcParams['figure.figsize'][0]*2/3,
             'font.weight': 'bold'}
 plt.rcParams.update(rc_fonts)
 plotting._define_color_cycle()
-
 
 
 @click.command(
@@ -73,31 +76,18 @@ plotting._define_color_cycle()
     help='Path to output files',
 )
 def main(data_path, sim_file, label_file, fit_n_decades, output_path):
-    """All of this is so far done to work for the 1D model
-    The aim is to have separate files 'TimeScaleAnalysis_X' for the different systems
-    that all use the same class but different preprocessing steps
-
-    Example
-    -------
-    ./ContactDistanceTSA_PDZ3.py -dpp contactDistances_pdz3/contacts_pdz3_combined_1mus_10mus/cluster -mdp contactDistances_pdz3/pdz3_contactDistances_config.mdp -nD 5 -sys PDZ3L -o test_analysis/
-    
-    All studied clusters are used: contactDistances_pdz3/contacts_pdz3_combined_1mus_10mus/cluster* (otherwise use cluster1_... for a specific file)
-    Simulation parameters: contactDistances_pdz3/pdz3_contactDistances_config.mdp (entries 'dt = ' and 'nstxtcout = ' are mandatory)
-    Number of decades covered by timescale analysis: 5
-    Figures and data are stored in: test_analysis/
-
-
-    TODO
-    Adjust this file to do following
-        - remove any loading of data
-        - generate 3 artifical peaks and produce data points (with noise)
-        - perform fit onto these data points with log-spacing etc.
-        - how to handle 'get_simulation_parameters()'?
+    """
+    ADD HEADER
 
     Exponential time traces can be generated with utils.generate_multi_exp_timetrace().
     """
-    # utils.generate_multi_exp_timetrace(offset=1.7, timescales=[1e1, 1e2, 1e4],
-    #                                   amplitude=[0.2, 0.5, 1.0], n_steps=100000, sigma=0.01)
+    utils.generate_multi_exp_timetrace(
+        offset=1.7,
+        timescales=[1e1, 1e2, 1e4],
+        amplitude=[0.2, 0.5, 1.0],
+        n_steps=100000,
+        sigma=0.01
+    )
     preP = None
     # Perform preprocessing
     preP = Preprocessing(
@@ -106,7 +96,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories()
+    preP.load_trajectories(n_traj_conc=26)
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
 
@@ -114,7 +104,11 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # The important parameter is Preprocessing.data_dir
     if preP is None:
         preP = Preprocessing(data_path)
-    assert isfile(preP.data_dir), "Input data is not correctly preprocessed! Preprocessing.save_preprocessed_data() must be used to save the preprocessed data."
+    assert isfile(preP.data_dir), (
+        "Input data is not correctly preprocessed! "
+        "Preprocessing.save_preprocessed_data() must be used to save "
+        "the preprocessed data."
+    )
 
     tsa = TimeScaleAnalysis(preP.data_dir, fit_n_decades)
     tsa.load_data()
@@ -123,57 +117,69 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     dynamic_content_arr = np.zeros((tsa.fit_n_decades*10+1)*2, dtype=np.float64).reshape((2, (tsa.fit_n_decades*10+1))).T
 
     tsa.interpolate_data_points(iterations=2)  # interpolate additional data points as mean
-    tsa.log_space_data(500)  # transform linear frames into log ones
+    tsa.log_space_data(5000)  # transform linear frames into log ones
     tsa.extend_timeTrace()  # append additional frames for better convergence
 
+    store_spectrum = []  # list that is filled which the amplitudes
     for idxObs in range(tsa.data_mean.shape[1]):
-        temp_mean = tsa.data_mean[:, idxObs]
-        temp_sem = tsa.data_sem[:, idxObs]
+        temp_mean = utils.gaussian_smooth(tsa.data_mean[:, idxObs], 6)
+        temp_sem = utils.gaussian_smooth(tsa.data_sem[:, idxObs], 6)
         temp_label = tsa.labels[idxObs]
-        # This is done to accomplish a more precise fit as distances can be rather small in their change
-        scaling_factor = 30
-        temp_mean *= scaling_factor
-        temp_sem *= scaling_factor
+        # It can be helpful to rescale the data to be more sensitive
+        # This is especially the case for small distances and angles
+
+        #scaling_factor = 30
+        #temp_mean *= scaling_factor
+        #temp_sem *= scaling_factor
         if False:
             "Scan through several regularization parameters to find the best one"
             regPara, P_Bayes = tsa.perform_tsa(regPara=[1,3,5,7,10,20,30,40,50,60,70,80,90,100], startTime=1e-10)
             plt.plot(regPara, P_Bayes, marker='+', ms=2.5, c='k', lw=1.3)
             plt.xscale('symlog', subs=[2,3,4,5,6,7,8,9], linthresh=1e-10)
             utils.save_fig(f'{output_path}/Bayesian_regPara_{idxObs}.pdf')
-        # Provide single observable to TSA class
-        tsa.options['temp_mean'] = utils.gaussian_smooth(temp_mean, 6)
-        tsa.options['temp_sem'] = utils.gaussian_smooth(temp_sem, 6)
-        lag_rates = tsa.perform_tsa(
-            regPara=10,
-            startTime=1e-1,
-            posVal=True
-        )
-        temp_mean /= scaling_factor
-        temp_sem /= scaling_factor
-        tsa.spectrum[:, 1] /= scaling_factor
 
-        ax1, ax2 = plotting.plot_TSA(temp_mean,
-                                     temp_sem,
-                                     tsa.spectrum,
-                                     tsa.times,
-                                     lag_rates,
-                                     tsa.n_steps)
-        ax1.set_xlim(1e-1, 1e6)
+        # Provide single observable to TSA class
+        tsa.options['temp_mean'] = temp_mean
+        tsa.options['temp_sem'] = temp_sem
+        regPara = 50
+        lag_rates = tsa.perform_tsa(
+            regPara=regPara,
+            startTime=1e2,
+            posVal=False
+        )
+        #temp_mean /= scaling_factor
+        #temp_sem /= scaling_factor
+        #tsa.spectrum[:, 1] /= scaling_factor
+        ax1, ax2 = plotting.plot_TSA(
+            temp_mean,
+            temp_sem,
+            tsa.spectrum,
+            tsa.times,
+            lag_rates,
+            tsa.n_steps
+        )
+        ax1.set_xlim(1e2, 1e7)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
-        temp_label = plotting.pretty_label(temp_label, prefix='d')
-        ax1.set_ylabel(f'{temp_label}(t)')
-        plotting.save_fig(f'{output_path}/timescale_analysis_{idxObs}.pdf')
+        ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix='r')}(t)')
+        plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')
+
+        store_time = tsa.spectrum[:, 0]
+        store_spectrum.append(tsa.spectrum[:, 1])
 
         #######################################################################
         # This part is only of interest for log-periodic oscillation studies  #
+        #
         #fit_range = [1e0, 1e5]
         #ax1, ax_insert, fitParameters = plotting.fit_log_periodic_oscillations(
         #    temp_mean,
         #    tsa.times,
-        #    fit_range
+        #    fit_range,
+        #    popt=(0.2, 2.0, 0.0, 1.0, 1.0, -2)
         #)
         #ax1.set_xlim(1e-1, 1e6)
         #ax_insert.set_xlim(1e-1, 1e6)
+        #ax1.set_xlabel(r'$t/\tau_k$ [ns]')
+        #ax1.set_ylabel(f'{temp_label}(t)')
         #plotting.save_fig(f'{output_path}/log_periodic_fit_{idxObs}.pdf')
         #utils.save_npArray(
         #    fitParameters,
@@ -189,8 +195,20 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         #)
         #######################################################################
 
-        dynamic_content_arr = np.add(dynamic_content_arr, tsa.spectrum**2)
+    utils.save_npArray(
+        np.column_stack([store_time] + store_spectrum),
+        output_path,
+        'timescale_spectra',
+        comment=(
+            f'Time scale spectra of all observables\n'
+            f'Columns: time, {tsa.labels}\n'
+            f'Regularization parameter lambda={regPara}, '
+            f'fit parameters={tsa.fit_n_decades*10+1}'
+        )
+    )
+
     sys.exit()
+    dynamic_content_arr = np.add(dynamic_content_arr, tsa.spectrum**2)
 
     plotting.plot_value_heatmaps(tsa.quant_data_arr, col, tsa.times*1e9, output_path=output_path)
 

@@ -265,7 +265,7 @@ def get_alpha_cmap(cmap, alpha_fraction=0.1):
     return clrs.ListedColormap(cmap_alpha)
 
 
-def pretty_label(label, prefix=None):
+def pretty_label(label, prefix='d'):
     """Make y-axis label prettier for scientific plotting
     In many cases, the observable is a distance or angle with the label
     being stored as X_Y (e.g. atoms X,Y)
@@ -277,8 +277,7 @@ def pretty_label(label, prefix=None):
     """
     if '_' in label:
         label = '('+label+')'
-    if prefix:
-        label = prefix + label
+    label = prefix + label
     label = label.replace('_', ',')
     return label
 

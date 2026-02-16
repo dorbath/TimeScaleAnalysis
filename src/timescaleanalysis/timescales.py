@@ -73,12 +73,14 @@ def derive_tsa_spectrum(
     if initValues is None:
         initValues = np.zeros(nR)
         initValues[0] = data_points[-1]
+
     if not posVal:
         constraints = None
     else:
         constraints = {'type': 'ineq', 'fun': constrain_func_posVal}
 
     # Fit with large regPara to get good initialValues for amplitudes
+    # This imporves the stability of the final fit
     pre_fit = minimize(
         objective_function,
         initValues,
@@ -86,6 +88,7 @@ def derive_tsa_spectrum(
         tol=1e-3,
         options={'maxiter': 1e8}
     ).x
+
     # Suppress small amplitudes to improve convergence of final fit
     condition = np.abs(pre_fit[1:]) < np.amax(np.abs(pre_fit[1:])) * 0.2
     pre_fit[1:][condition] *= 0.2
