@@ -1,11 +1,13 @@
-"Plotting"
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import colors as clrs
 from scipy.ndimage import gaussian_filter
 import prettypyplot as pplt
+import timescaleanalysis.utils as utils
 from skimage.filters import threshold_otsu, threshold_multiotsu
+from scipy.optimize import curve_fit
 
 
 def plot_TSA(data_points, data_meanstd, spectrum, times, lag_rates, n_steps):
@@ -26,7 +28,7 @@ def plot_TSA(data_points, data_meanstd, spectrum, times, lag_rates, n_steps):
     ax2.yaxis.label.set_color('tab:blue')
     ax2.hlines(0, ax1.get_xlim()[0], ax1.get_xlim()[1], colors='k', lw=0.7, ls='--')
 
-    ax1.set_xscale('symlog', subs=[2,3,4,5,6,7,8,9], linthresh=1e-10)
+    _log_axis(ax1, axis='x')
     ax1.grid(False, axis='y')
     ax2.grid(False)
     ax2.set_yticks([])
@@ -130,6 +132,101 @@ def plot_value_heatmaps(dataframes, col, times, output_path=None):
     save_fig(f'{output_path}/time_dependent_distribution_{col}.pdf')
 
 
+def fit_log_periodic_oscillations(log_time_trace, times, fit_range, popt=None):
+    """Fit the time trace with a power law (t^a0) and
+    logarithmic oscillations with period tau_log.
+    The fit function is sa + sb*t^a0 + sc*t^a0 * cos(2pi/tau log10(t) + phi)
+
+    Parameters
+    ----------
+    log_time_trace: np.array, data points to fit
+            (log-spaced and averaged time trace)
+    times: np.array, log-spaced time
+    fit_range: list, lower and upper boundary of log-fit in [ns]
+            (this improves the fit as many time traces converge at some point)
+    popt: tuple, initial guess of all 6 parameters: (a0, tau, s_a, s_b, s_c, phi)
+            a0: exponent of power law
+            tau: period of logarithmic oscillations
+            s_a: offset of fit function
+            s_b: amplitude of power law
+            s_c: amplitude of logarithmic oscillations
+            phi: phase shift of logarithmic oscillations
+
+    Return
+    ------
+    ax1: matplotlib.axes, main plot axis
+    ax_insert: matplotlib.axes, inset plot axis
+    """
+
+    def _fit_log_osc(x, a0, tau, sa, sb, sc, phi): 
+        """Full fit function with power law and logarithmic oscillations"""
+        return (sa
+                + sb*np.power(x, a0)
+                + sc*np.power(x, a0)*np.cos((2*np.pi/tau)*np.log10(x)+phi))
+
+    if any(log_time_trace < 0):
+        warnings.warn(
+            "Negative values in 'log_time_trace'! "
+            "This may lead to problems in the fit and plotting. "
+            "It is recommended to shift the time trace to positive values."
+        )
+
+    fig, ax1 = plt.subplots()
+    ax1.tick_params(direction='in', which='both')
+
+    lower_bound = np.where(times >= fit_range[0])[0][0]
+    upper_bound = np.where(times <= fit_range[1])[0][-1]
+
+    # Prevent devision by zero problems
+    times[np.isclose(times, 0)] = 1e-10
+
+    fit_times = times[lower_bound:upper_bound]
+    fit_time_trace = log_time_trace[lower_bound:upper_bound]
+    if popt is None:
+        # TODO: add better initial guess if None provided
+        popt = (0.2, 2.0, 0.1, 10, -8, -2.7)
+
+    popt, pcov = curve_fit(
+        _fit_log_osc,
+        fit_times,
+        fit_time_trace,
+        p0=popt,
+        maxfev=10000
+    )
+    # TODO: if verbose:; safe fit parameters
+    for idxP, p in enumerate(popt):
+        print(np.around(p, 4), np.around(np.sqrt(np.diag(pcov))[idxP], 5))
+
+    ax1.plot(times, log_time_trace, label=r'$\langle r(t)\rangle$ [nm]', c='k')
+    ax1.plot(fit_times, _fit_log_osc(fit_times, *popt), c='tab:red')
+    ax1.grid(False, axis='x')
+    _log_axis(ax1, axis='xy')
+    plt.tick_params(direction='in', which='both')
+
+    # TODO: add better insert plot with confidence intervals for fit parameters
+    ax_insert = ax1.inset_axes([0.5, 0.05, 0.45, 0.45])
+    ax_insert.plot(
+        times,
+        ((log_time_trace - popt[2]) / np.power(times, popt[0]) - popt[3]),
+        color='k'
+    )
+    ax_insert.plot(
+        fit_times,
+        (_fit_log_osc(fit_times, *popt)-popt[2])
+        / np.power(fit_times, popt[0])-popt[3],
+        color='tab:red')
+    ax_insert.grid(None)
+    ax_insert.set_xlim(ax1.get_xlim()[0], ax1.get_xlim()[1])
+    ax_insert.set_ylim(-2.5*popt[4], 2.5*popt[4])
+    _log_axis(ax_insert, axis='x')
+    ax_insert.yaxis.set_major_formatter(plt.NullFormatter())
+    ax_insert.xaxis.set_major_formatter(plt.NullFormatter())
+    ax_insert.tick_params(labelsize=0, length=2)
+    ax_insert.tick_params(direction='in', which='both', labelsize=8)
+
+    return ax1, ax_insert
+
+
 def get_alpha_cmap(cmap, alpha_fraction=0.1):
     """Add alpha channel to cmap."""
     cmap = plt.get_cmap(cmap)
@@ -142,6 +239,24 @@ def get_alpha_cmap(cmap, alpha_fraction=0.1):
     #alpha[-alpha_n:] = np.linspace(1, 0, alpha_n) #elim low values
     cmap_alpha[:, -1] = alpha
     return clrs.ListedColormap(cmap_alpha)
+
+
+def _log_axis(ax, axis, subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=0.01):
+    """Transform axis to logarithmic scale
+
+    Parameters
+    ----------
+    ax: matplotlib.axes, axis to be transformed
+    axis: str, 'x' or 'y', defines which axis is transformed"""
+    if axis == 'xy' or axis == 'yx':
+        ax.set_xscale('symlog', subs=subs, linthresh=linthresh)
+        ax.set_yscale('symlog', subs=subs, linthresh=linthresh)
+    elif axis == 'x':
+        ax.set_xscale('symlog', subs=subs, linthresh=linthresh)
+    elif axis == 'y':
+        ax.set_yscale('symlog', subs=subs, linthresh=linthresh)
+    else:
+        raise ValueError('Invalid axis! "axis" must be "x" or "y".')
 
 
 def save_fig(path):

@@ -16,9 +16,6 @@ import timescaleanalysis.utils as utils
 import timescaleanalysis.plotting as plotting
 from timescaleanalysis.timescales import TimeScaleAnalysis
 from timescaleanalysis.preprocessing import Preprocessing
-from scipy.optimize import minimize, curve_fit
-from scipy.ndimage import uniform_filter1d, gaussian_filter1d
-from scipy.signal import find_peaks, peak_widths
 import click
 
 pplt.use_style(colors='cbf8', cmap='macaw_r')
@@ -134,7 +131,7 @@ def main(data_path, sim_file, fit_n_decades, output_path):
         tsa.options['temp_mean'] = utils.gaussian_smooth(temp_mean, 6)
         tsa.options['temp_sem'] = utils.gaussian_smooth(temp_sem, 6)
         lag_rates = tsa.perform_tsa(
-            regPara=1,
+            regPara=10,
             startTime=1e-1,
             posVal=True
         )
@@ -153,9 +150,13 @@ def main(data_path, sim_file, fit_n_decades, output_path):
         ax1.set_ylabel(r'$\langle r(t)\rangle$ [nm]')
         plotting.save_fig(f'{output_path}/timescale_analysis_{idxObs}.pdf')
 
+        ax1, ax_insert = plotting.fit_log_periodic_oscillations(temp_mean, tsa.times, [1e0, 1e5])
+        ax1.set_xlim(1e-1, 1e6)
+        ax_insert.set_xlim(1e-1, 1e6)
+        plotting.save_fig(f'{output_path}/log_periodic_fit_{idxObs}.pdf')
+
         dynamic_content_arr = np.add(dynamic_content_arr, tsa.spectrum**2)
     sys.exit()
-
 
     plotting.plot_value_heatmaps(tsa.quant_data_arr, col, tsa.times*1e9, output_path=output_path)
 
