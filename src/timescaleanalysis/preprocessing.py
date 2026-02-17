@@ -3,7 +3,7 @@ import warnings
 from genericpath import isfile, isdir
 import numpy as np
 import os
-import json
+import timescaleanalysis.io as io
 
 
 class Preprocessing:
@@ -70,6 +70,7 @@ class Preprocessing:
     def load_absorption_spectra(self):
         """Load single absorption spectrum of experimental
         data and corresponding times and frequencies"""
+        # TODO Add here the 1D (Exp data) part
 
     def load_trajectories(self,
                           n_traj_conc: int = None,
@@ -120,7 +121,7 @@ class Preprocessing:
                     "precision must be a NumPy float dtype (np.float16/32/64)"
                 )
             if not isfile(folder_dir+'/'+file_name):
-                raise Exception(
+                raise FileNotFoundError(
                     f"File {folder_dir+'/'+file_name} does not exist!"
                 )
 
@@ -326,7 +327,7 @@ class Preprocessing:
 
         if self.options['sim_file'] is not None:
             if not isfile(self.options['sim_file']):
-                raise Exception(
+                raise FileNotFoundError(
                     f"File with simulation parameters "
                     f"{self.options['sim_file']} does not exist!"
                 )
@@ -360,9 +361,6 @@ class Preprocessing:
             )
             os.makedirs(output_path)
 
-        if isfile(output_path+'/preprocessed_data.json'):
-            print(("Preprocessed data file already exists! "
-                  "Adjusting output file!"))
         if (self.data_mean is None or
                 self.data_sem.any() is None or
                 self.options['times'] is None):
@@ -395,7 +393,7 @@ class Preprocessing:
         # Load label file
         if self.options['label_file'] is not None:
             if not isfile(self.options['label_file']):
-                raise Exception(
+                raise FileNotFoundError(
                     f"Label file {self.options['label_file']} does not exist!"
                 )
             labels_lst = np.loadtxt(
@@ -418,25 +416,11 @@ class Preprocessing:
                 dtype=str
             )
 
-        # Make sure no file is overwritten
-        safety_file = output_path+'/preprocessed_data.json'
-        safety_counter = 1
-        while isfile(safety_file):
-            safety_file = (
-                f"{output_path}/preprocessed_data_{safety_counter}.json"
-            )
-            safety_counter += 1
-        if safety_counter > 1:
-            output_file = safety_file
-        else:
-            output_file = output_path+'/preprocessed_data.json'
-        print('Saving preprocessed data to '+output_file)
-
-        self.data_dir = output_file
-        with open(output_file, 'w') as f:
-            json.dump({
-                'data_mean': self.data_mean.tolist(),
-                'data_sem': self.data_sem.tolist(),
-                'times': self.options['times'].tolist(),
-                'labels': labels_lst.tolist()
-            }, f)
+        # Save data in json file
+        output_dic = {
+            'data_mean': self.data_mean.tolist(),
+            'data_sem': self.data_sem.tolist(),
+            'times': self.options['times'].tolist(),
+            'labels': labels_lst.tolist()
+        }
+        self.data_dir = io.save_json(output_dic, output_path)

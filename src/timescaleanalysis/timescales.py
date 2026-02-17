@@ -19,9 +19,9 @@ def derive_tsa_spectrum(
         posVal: bool = False,
         RegParaSearch: bool = False):
     """Perform multi-exponential fit to get spectrum of TSA.
-    The fit function has the form: S(t) = SUM a_k exp(-t/tau_k)
-    where the amplitudes a_k are fitted for given lag rates (1/tau_k).
-    Peaks in a_k(tau_k) reveal dynamical processes at timescale tau_k!
+    The fit function has the form: S(t) = SUM s_k exp(-t/tau_k)
+    where the amplitudes s_k are fitted for given lag rates (1/tau_k).
+    Peaks in s_k(tau_k) reveal dynamical processes at timescale tau_k!
 
     Parameters
     ----------
@@ -56,8 +56,12 @@ def derive_tsa_spectrum(
         return -amplitudes[1:]
 
     @jit(nopython=True)
-    def objective_function(coeff, reg_para=regPara):
-        """Fit function chi^2 - lambda*S_ent"""
+    def objective_function(
+            coeff: np.array,
+            reg_para: float = regPara):
+        """Fit function chi^2 - lambda*S_ent
+        'coeff' is the inital guess for the amplitudes s_k
+        """
         fit_data = np.array(
             [np.sum(coeff*np.exp(-times[j]*lag_rates)) for j in range(n_steps)]
         )
@@ -228,7 +232,7 @@ class TimeScaleAnalysis:
         iterations: int, number of times to perform interpolation,
                     each iteration doubles the number of frames
         """
-        def interpolation_step(interpArr):
+        def interpolation_step(interpArr: np.array):
             """Interpolate neighboring frames by average
 
             Parameters

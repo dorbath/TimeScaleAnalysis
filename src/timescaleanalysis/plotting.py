@@ -1,38 +1,73 @@
-import warnings
-
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors as clrs
+import matplotlib as mpl
 from scipy.ndimage import gaussian_filter
 import prettypyplot as pplt
-import timescaleanalysis.utils as utils
-from skimage.filters import threshold_otsu, threshold_multiotsu
-from scipy.optimize import curve_fit
+from skimage.filters import threshold_multiotsu
 
 
-def plot_TSA(data_points, data_meanstd, spectrum, times, lag_rates, n_steps):
-    """Plot for each distance the averaged time trace and timescale spectrum"""
-    upper_bound = np.add(data_points, data_meanstd)
-    lower_bound = np.subtract(data_points, data_meanstd)
-    laplace_trafo = np.array([np.sum(spectrum[:,1]*np.exp(-times[j]*lag_rates)) for j in range(n_steps)])
+def plot_TSA(
+        data_mean: np.array,
+        data_sem: np.array,
+        spectrum: np.array,
+        times: np.array,
+        lag_rates: np.array,
+        n_steps: int):
+    """Plot for each observable the averaged time trace and timescale spectrum"""
+    upper_bound = np.add(data_mean, data_sem)
+    lower_bound = np.subtract(data_mean, data_sem)
+    laplace_trafo = np.array(
+        [np.sum(spectrum[:, 1]*np.exp(-times[j]*lag_rates))
+         for j in range(n_steps)])
 
     # ax1 plots the time trace and the Laplace transformation
     fig, ax1 = plt.subplots()
-    ax1.fill_between(times, lower_bound, upper_bound, lw=0, color='k', alpha=0.4)
-    ax1.plot(times, data_points, marker='.', ms=0, lw=1.3, color='k')
+    ax1.fill_between(times, lower_bound, upper_bound,
+                     lw=0, color='k', alpha=0.4)
+    ax1.plot(times, data_mean, marker='.', ms=0, lw=1.3, color='k')
     ax1.plot(times, laplace_trafo, marker='.', ms=0, lw=1.0, color='tab:red')
-    # ax2 plots the amplitude spectrum
+
+    # ax2 shows the amplitude spectrum
     ax2 = ax1.twinx()
-    ax2.plot(spectrum[1:,0], -spectrum[1:,1], marker='.', color='tab:blue', ms=2.5, lw=0.5, ls='--')
+    ax2.plot(spectrum[1:, 0], -spectrum[1:, 1],
+             marker='.', color='tab:blue', ms=2.5, lw=0.5, ls='--')
     ax2.tick_params(axis='y', colors='tab:blue')
     ax2.yaxis.label.set_color('tab:blue')
-    ax2.hlines(0, ax1.get_xlim()[0], ax1.get_xlim()[1], colors='k', lw=0.7, ls='--')
+    ax2.hlines(0, ax1.get_xlim()[0], ax1.get_xlim()[1],
+               colors='k', lw=0.7, ls='--')
 
     _log_axis(ax1, axis='x')
     ax1.grid(False, axis='y')
     ax2.grid(False)
     ax2.set_yticks([])
     return ax1, ax2
+
+
+def plot_dynamical_content(
+        times: np.array,
+        dynamic_content: np.array,
+        ax: mpl.axes = None):
+    """Plot dynamical content D(tau_k) = sum_n s_n^2.
+    The dynamical content is a single observable that describes
+    the full behavior of all observables, weighted by their amplitudes.
+
+    Parameters
+    ----------
+    times: np.array, log-spaced times corresponding to tau_k
+    dynamic_content: np.array, dynamical content D(tau_k)
+    ax: matplotlib.axes, axis to plot on. This is important if
+            multiple dynamical contents are plotted in the same figure.
+    """
+    if ax is None:
+        fig, ax = plt.subplots()
+    ax.plot(times, dynamic_content, lw=1.3, ms=0)
+    ax.tick_params(direction='in', which='major', top=True, right=False)
+    ax.tick_params(direction='in', which='minor', top=True, right=False)
+    _log_axis(ax, axis='x')
+    ax.set_xlabel(r'$\tau_k$', labelpad=0)
+    ax.set_ylabel(r'$D(\tau_k)$', labelpad=0)
+    ax.grid(False, axis='x', which='major')
+    return ax
 
 
 def plot_2D_energy_landscape(dx, dy, n_bins=500):
@@ -132,140 +167,20 @@ def plot_value_heatmaps(dataframes, col, times, output_path=None):
     save_fig(f'{output_path}/time_dependent_distribution_{col}.pdf')
 
 
-def fit_log_periodic_oscillations(
-        log_time_trace: np.array,
-        times: np.array,
-        fit_range: list,
-        popt: tuple = None):
-    """Fit the time trace with a power law (t^a0) and
-    logarithmic oscillations with period tau_log.
-    A system with hierarchical dynamics may yield equidistant timescales/peaks
-    in the timescale spectrum (on a log-time axis).
-    This will result in logarithmic oscillations superimposed by a power law
-    which describes the diffusive dynamics.
-
-    The fit function is
-
-            sa + sb*t^a0 + sc*t^a0 * cos(2pi/tau log10(t) + phi)
-
-    Parameters
-    ----------
-    log_time_trace: np.array, data points to fit
-            (log-spaced and averaged time trace)
-    times: np.array, log-spaced time
-    fit_range: list, lower and upper boundary of log-fit in [ns]
-            (this improves the fit as many time traces converge at some point)
-    popt: tuple, initial guess of all 6 parameters: (a0, tau, s_a, s_b, s_c, phi)
-            a0: exponent of power law
-            tau: period of logarithmic oscillations
-            s_a: offset of fit function
-            s_b: amplitude of power law
-            s_c: amplitude of logarithmic oscillations
-            phi: phase shift of logarithmic oscillations
-    filename: str, name of file to save fit parameters (default: None, no saving)
-    Return
-    ------
-    ax1: matplotlib.axes, main plot axis
-    ax_insert: matplotlib.axes, inset plot axis
-    fitParameters: tuple, optimized fit parameters (a0, tau, s_a, s_b, s_c, phi)
-            with their standard deviations from the covariance matrix
-    """
-
-    def _fit_log_osc(x, a0, tau, sa, sb, sc, phi): 
-        """Full fit function with power law and logarithmic oscillations"""
-        return (sa
-                + sb*np.power(x, a0)
-                + sc*np.power(x, a0)*np.cos((2*np.pi/tau)*np.log10(x)+phi))
-
-    if any(log_time_trace < 0):
-        warnings.warn(
-            "Negative values in 'log_time_trace'! "
-            "This may lead to problems in the fit and plotting. "
-            "It is recommended to shift the time trace to positive values.",
-            category=Warning,
-        )
-
-    fig, ax1 = plt.subplots()
-    ax1.tick_params(direction='in', which='both')
-
-    lower_bound = np.where(times >= fit_range[0])[0][0]
-    upper_bound = np.where(times <= fit_range[1])[0][-1]
-
-    # Prevent devision by zero problems
-    times[np.isclose(times, 0)] = 1e-10
-
-    fit_times = times[lower_bound:upper_bound]
-    fit_time_trace = log_time_trace[lower_bound:upper_bound]
-    if popt is None:
-        a0 = 0.5  # diffusive process
-        tau_log = 2.0  # 1/2 oscillations per decade
-        sa = fit_time_trace[0]
-        sb = 1.0
-        sc = 1.0
-        phi = -np.pi/2
-        warnings.warn(
-            "No initial guess for fit parameters provided! "
-            "This may lead to problems in the log oscillation fit. "
-            "Initial values are guess as follows: "
-            f"a0={a0}, tau_log={tau_log}, "
-            f"sa={sa:.4f}, "
-            f"sb={sb}, sc={sc}, phi={phi:.4f}.",
-            category=Warning,
-        )
-        popt = (a0, tau_log, sa, sb, sc, phi)
-
-    popt, pcov = curve_fit(
-        _fit_log_osc,
-        fit_times,
-        fit_time_trace,
-        p0=popt,
-        maxfev=10000
-    )
-
-    ax1.plot(times, log_time_trace, label=r'$\langle r(t)\rangle$ [nm]', c='k')
-    ax1.plot(fit_times, _fit_log_osc(fit_times, *popt), c='tab:red')
-    ax1.grid(False, axis='x')
-    _log_axis(ax1, axis='xy')
-    plt.tick_params(direction='in', which='both')
-
-    ax_insert = ax1.inset_axes([0.5, 0.05, 0.45, 0.45])
-    ax_insert.plot(
-        times,
-        ((log_time_trace - popt[2]) / np.power(times, popt[0]) - popt[3]),
-        color='k'
-    )
-    ax_insert.plot(
-        fit_times,
-        (_fit_log_osc(fit_times, *popt)-popt[2])
-        / np.power(fit_times, popt[0])-popt[3],
-        color='tab:red')
-    ax_insert.grid(None)
-    ax_insert.set_xlim(ax1.get_xlim()[0], ax1.get_xlim()[1])
-    ax_insert.set_ylim(-2.5*popt[4], 2.5*popt[4])
-    _log_axis(ax_insert, axis='x')
-    ax_insert.yaxis.set_major_formatter(plt.NullFormatter())
-    ax_insert.xaxis.set_major_formatter(plt.NullFormatter())
-    ax_insert.tick_params(labelsize=0, length=2)
-    ax_insert.tick_params(direction='in', which='both', labelsize=8)
-
-    return ax1, ax_insert, np.vstack([popt, np.sqrt(np.diag(pcov))])
-
-
-def get_alpha_cmap(cmap, alpha_fraction=0.1):
+def get_alpha_cmap(cmap: str, alpha_fraction: float = 0.1):
     """Add alpha channel to cmap."""
     cmap = plt.get_cmap(cmap)
     cmap_alpha = cmap(np.arange(cmap.N))
-    ncolors = len(cmap_alpha) 
-    
+    ncolors = len(cmap_alpha)
+
     alpha = np.ones(ncolors)
     alpha_n = int(alpha_fraction * ncolors)
-    alpha[:alpha_n] = np.linspace(0, 1, alpha_n) #elim high values
-    #alpha[-alpha_n:] = np.linspace(1, 0, alpha_n) #elim low values
+    alpha[:alpha_n] = np.linspace(0, 1, alpha_n)  # remove high values
     cmap_alpha[:, -1] = alpha
-    return clrs.ListedColormap(cmap_alpha)
+    return mpl.colors.ListedColormap(cmap_alpha)
 
 
-def pretty_label(label, prefix='d'):
+def pretty_label(label: str, prefix: str = 'd'):
     """Make y-axis label prettier for scientific plotting
     In many cases, the observable is a distance or angle with the label
     being stored as X_Y (e.g. atoms X,Y)
@@ -282,7 +197,11 @@ def pretty_label(label, prefix='d'):
     return label
 
 
-def _log_axis(ax, axis, subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=0.01):
+def _log_axis(
+        ax: mpl.axes,
+        axis: str,
+        subs: list = [2, 3, 4, 5, 6, 7, 8, 9],
+        linthresh: float = 0.01):
     """Transform axis to logarithmic scale
 
     Parameters
@@ -300,7 +219,7 @@ def _log_axis(ax, axis, subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=0.01):
         raise ValueError('Invalid axis! "axis" must be "x" or "y".')
 
 
-def save_fig(path):
+def save_fig(path: str):
     """Save plot in path and print out path for easier access"""
     pplt.hide_empty_axes()
     pplt.savefig(path, bbox_inches='tight')
@@ -308,15 +227,14 @@ def save_fig(path):
     plt.close()
 
 
-def _define_color_cycle():
-    """Define new color cycle for better visibility of lines in plots."""
-    # TODO: maybe use the one from particle physics or a combination of both
+def _color_cycle():
+    """Color cycle for red-green colorblind friendly plots."""
     default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    default_colors[0] = '#545454'
-    default_colors[1] = '#c05b19'
-    default_colors[2] = '#008d66'
-    default_colors[3] = '#96ce60'
-    default_colors[4] = '#57b5e9'
-    default_colors[5] = '#000000'
-    default_colors[6] = '#cc00eb'
+    default_colors[0] = '#005B8E'  # blue
+    default_colors[1] = '#E69F00'  # orange
+    default_colors[2] = '#D55E00'  # vermillion
+    default_colors[3] = '#000000'  # black
+    default_colors[4] = '#BE548F'  # purple
+    default_colors[5] = '#009E73'  # bluish green
+    default_colors[6] = '#56B4E9'  # light blue
     plt.rcParams['axes.prop_cycle'] = plt.cycler(color=default_colors)

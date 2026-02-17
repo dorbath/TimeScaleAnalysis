@@ -12,12 +12,15 @@ as they please, e.g. the used labels for plots, time steps etc.
 __author__ = "Emanuel Dorbath"
 
 from genericpath import isfile, isdir
+from tokenize import Comment
 import numpy as np
 import matplotlib.pyplot as plt
 import prettypyplot as pplt
 import sys
 import timescaleanalysis.utils as utils
 import timescaleanalysis.plotting as plotting
+import timescaleanalysis.io as io
+import timescaleanalysis.supplementary_analyses as suppAna
 from timescaleanalysis.timescales import TimeScaleAnalysis
 from timescaleanalysis.preprocessing import Preprocessing
 import click
@@ -28,7 +31,7 @@ rc_fonts = {'figure.figsize': (plt.rcParams['figure.figsize'][0]*2/3,
             'font.size': 15,
             'font.weight': 'bold'}
 plt.rcParams.update(rc_fonts)
-plotting._define_color_cycle()
+plotting._color_cycle()
 
 
 @click.command(
@@ -81,13 +84,17 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
 
     Exponential time traces can be generated with utils.generate_multi_exp_timetrace().
     """
-    utils.generate_multi_exp_timetrace(
-        offset=1.7,
-        timescales=[1e1, 1e2, 1e4],
-        amplitude=[0.2, 0.5, 1.0],
-        n_steps=100000,
-        sigma=0.01
-    )
+    #utils.generate_multi_exp_timetrace(
+    #    offset=1.7,
+    #    timescales=[1e1, 1e2, 1e4],
+    #    amplitude=[0.2, 0.5, 1.0],
+    #    n_steps=100000,
+    #    sigma=0.01
+    #)
+
+    # Needed for general testing of script
+    # If you know your input data (and it is always the same)
+    # Adjust the steps as you please
     preP = None
     # Perform preprocessing
     preP = Preprocessing(
@@ -113,8 +120,10 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     tsa = TimeScaleAnalysis(preP.data_dir, fit_n_decades)
     tsa.load_data()
 
-    # Derive dynamical content for all observables
-    dynamic_content_arr = np.zeros((tsa.fit_n_decades*10+1)*2, dtype=np.float64).reshape((2, (tsa.fit_n_decades*10+1))).T
+    # Derive dynamical content for all observables on the fly
+    dynamic_content_arr = np.zeros(
+        (tsa.fit_n_decades*10+1)*2,
+        dtype=np.float64).reshape((2, (tsa.fit_n_decades*10+1))).T
 
     tsa.interpolate_data_points(iterations=2)  # interpolate additional data points as mean
     tsa.log_space_data(5000)  # transform linear frames into log ones
@@ -127,10 +136,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         temp_label = tsa.labels[idxObs]
         # It can be helpful to rescale the data to be more sensitive
         # This is especially the case for small distances and angles
-
-        #scaling_factor = 30
-        #temp_mean *= scaling_factor
-        #temp_sem *= scaling_factor
         if False:
             "Scan through several regularization parameters to find the best one"
             regPara, P_Bayes = tsa.perform_tsa(regPara=[1,3,5,7,10,20,30,40,50,60,70,80,90,100], startTime=1e-10)
@@ -141,15 +146,12 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         # Provide single observable to TSA class
         tsa.options['temp_mean'] = temp_mean
         tsa.options['temp_sem'] = temp_sem
-        regPara = 50
+        regPara = 200
         lag_rates = tsa.perform_tsa(
             regPara=regPara,
             startTime=1e2,
             posVal=False
         )
-        #temp_mean /= scaling_factor
-        #temp_sem /= scaling_factor
-        #tsa.spectrum[:, 1] /= scaling_factor
         ax1, ax2 = plotting.plot_TSA(
             temp_mean,
             temp_sem,
@@ -166,11 +168,14 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         store_time = tsa.spectrum[:, 0]
         store_spectrum.append(tsa.spectrum[:, 1])
 
+        # Derive dynamical content on the fly
+        dynamic_content_arr = np.add(dynamic_content_arr, tsa.spectrum**2)
+
         #######################################################################
         # This part is only of interest for log-periodic oscillation studies  #
         #
         #fit_range = [1e0, 1e5]
-        #ax1, ax_insert, fitParameters = plotting.fit_log_periodic_oscillations(
+        #ax1, ax_insert, fitParameters = suppAna.fit_log_periodic_oscillations(
         #    temp_mean,
         #    tsa.times,
         #    fit_range,
@@ -181,7 +186,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         #ax1.set_xlabel(r'$t/\tau_k$ [ns]')
         #ax1.set_ylabel(f'{temp_label}(t)')
         #plotting.save_fig(f'{output_path}/log_periodic_fit_{idxObs}.pdf')
-        #utils.save_npArray(
+        #io.save_npArray(
         #    fitParameters,
         #    output_path,
         #    f'log_periodic_{idxObs}_FitParameters.txt',
@@ -195,22 +200,48 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         #)
         #######################################################################
 
-    utils.save_npArray(
+    io.save_npArray(
         np.column_stack([store_time] + store_spectrum),
         output_path,
         'timescale_spectra',
         comment=(
             f'Time scale spectra of all observables\n'
-            f'Columns: time, {tsa.labels}\n'
+            f'Columns:\n'
+            f'time '+''.join(tsa.labels)+'\n'
+            f'Regularization parameter lambda={regPara}, '
+            f'fit parameters={tsa.fit_n_decades*10+1}'
+        )
+    )
+
+    # Once the analysis is performed, all spectra can be directly reloaded
+    # and the dynamical content can be derived
+    loaded_spectrum = io.load_npArray(output_path, 'timescale_spectra')
+    temp_tau_k, temp_dyn_cont = utils.derive_dynamical_content(loaded_spectrum)
+
+    # In some cases, multiple dynamical contents are compared (e.g. different
+    # selection of observables, different regularization parameters etc.).
+    # In this case, multiple 'timescale_spectra' must be loaded and then can
+    # be easily plotted into the same figure with the ax=ax1 parameter.
+    ax1 = plotting.plot_dynamical_content(temp_tau_k, temp_dyn_cont)
+    ax1.set_xlim(1e2, 1e7)
+    ax1.set_ylim(0, ax1.get_ylim()[1])
+    plotting.save_fig(f'{output_path}/dynamical_content.pdf')
+
+    io.save_npArray(
+        np.column_stack([temp_tau_k, temp_dyn_cont]),
+        output_path,
+        'dynamical_content',
+        comment=(
+            f'Dynamical content derived from time scale spectra\n'
+            f'Columns: time, D(tau_k)\n'
             f'Regularization parameter lambda={regPara}, '
             f'fit parameters={tsa.fit_n_decades*10+1}'
         )
     )
 
     sys.exit()
-    dynamic_content_arr = np.add(dynamic_content_arr, tsa.spectrum**2)
 
-    plotting.plot_value_heatmaps(tsa.quant_data_arr, col, tsa.times*1e9, output_path=output_path)
+    #plotting.plot_value_heatmaps(tsa.quant_data_arr, col, tsa.times*1e9, output_path=output_path)
 
     #ensemble_averaged_change = []
     ## Derive ensemble average change (for each column/distance in cluster)
@@ -225,49 +256,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     #plt.gca().set_ylim(-0.15, 0.15)
     #pplt.legend(outside='top', ncols=4, fontsize=7)
     #utils.save_fig(f'{output_path}/ensemble_averaged_change_PDZ3.pdf')
-
-    ## Plot dynamical content
-    dynamic_content_arr[0, 0] = 0.0
-    dynamic_content_arr[1:(tsa.fit_n_decades*10+1), 0] = 1.0 / lag_rates[1:(tsa.fit_n_decades*10+1)]
-    dynamic_content_arr[:,1] = np.sqrt(dynamic_content_arr[:,1])
-    fig, ax1 = plt.subplots()
-    ax1.plot(dynamic_content_arr[1:, 0], dynamic_content_arr[1:, 1], lw=1.3, ms=0, color='tab:blue')
-    ax1.tick_params(direction='in', which='major', top=True, right=False)
-    ax1.tick_params(direction='in', which='minor', top=True, right=False)
-    ax1.set_xscale('symlog', subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=1e-10)
-    ax1.set_xlabel(r'$\tau_k$ [s]', labelpad=0)
-    ax1.set_ylabel(r'$D(\tau_k)$ [nm]', labelpad=0)
-    ax1.grid(False, axis='x', which='major')
-    ax1.set_xlim(1e-10, 1e-5)
-    #ax1.set_ylim(0, 0.11)
-    plt.ylim(0, plt.gca().get_ylim()[1])
-    utils.save_fig(f'{output_path}/dynamical_content.pdf')
-
-    clr_cycle = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    for idxDyn, dynCont in enumerate(dynamic_content_clusters_arr):
-        if str(idxDyn+1) not in cluster_label:
-            continue
-        dynCont[0, 0] = 0.0
-        dynCont[1:(tsa.fit_n_decades*10+1), 0] = 1.0 / lag_rates[1:(tsa.fit_n_decades*10+1)]
-        dynCont[:,1] = np.sqrt(dynCont[:,1])
-        ## Save dynamical content of each cluster
-        utils.save_npArray(dynCont, output_path, f'dynCont_PDZ3_Cluster{cluster_label[idxDyn]}', 
-                           comment=f'Dynamical content of PDZ3 Cluster {cluster_label[idxDyn]}: \nregularization parameter lambda=100, fitPara={tsa.fit_n_decades*10+1}')
-        plt.plot(dynCont[1:, 0], dynCont[1:, 1], lw=1.3, ms=0, label=f'C{cluster_label[idxDyn]}', color=clr_cycle[idxDyn])
-
-        ## Derive peaks and their width and plot them
-        #_plot_main_timescales(dynCont[1:53, :], cluster_label=cluster_label[idxDyn], color=clr_cycle[idxDyn])
-        #_plot_main_timescales(dynCont[1:53, :], height=(0, 0.01), color=clr_cycle[idxDyn], alpha=0.5)
-    plt.gca().tick_params(direction='in', which='major', top=True, right=True)
-    plt.gca().tick_params(direction='in', which='minor', top=True, right=True)
-    plt.gca().set_xscale('symlog', subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=1e-10)
-    plt.gca().set_xlabel(r'$\tau_k$ [s]', labelpad=0)
-    plt.gca().set_ylabel(r'$D(\tau_k)$ [nm]', labelpad=0)
-    plt.gca().grid(False, axis='y', which='major')
-    plt.gca().set_xlim(1e-10, 1e-5)
-    pplt.legend(outside='top', ncols=4, fontsize=9)
-    plt.ylim(0, plt.gca().get_ylim()[1])
-    utils.save_fig(f'{output_path}/dynamical_content_all_clusters.pdf')
 
     ## TODO: Add 2D plot of TSA of each distance vs time
 

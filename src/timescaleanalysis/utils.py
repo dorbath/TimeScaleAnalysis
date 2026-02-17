@@ -1,14 +1,13 @@
-import warnings
-
+from genericpath import isfile
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import colors as clrs
 import timescaleanalysis.plotting as plotting
+import timescaleanalysis.io as io
 import os
 from scipy.ndimage import gaussian_filter1d
 
 
-def gaussian_smooth(data, sigma, mode='nearest'):
+def gaussian_smooth(data: np.array, sigma: float, mode: str = 'nearest'):
     """Perform Gaussian smoothing/filter
 
     Parameters
@@ -25,21 +24,58 @@ def gaussian_smooth(data, sigma, mode='nearest'):
     return gaussian_filter1d(data, sigma, mode=mode)
 
 
-def save_npArray(array, folder_path, file_name, comment=''):
-    """Store a np.array in 'file_path/file_name'
+def generate_input_trajectories(file_dir: str):
+    """Get all files/trajectories in 'file_dir' with the correct prefix.
+    All files that fulfill file_dir* are taken as input.
+    """
+    # Isolate folder path and trajectory prefix
+    data_dir_split = file_dir.split("/")
+    folder_prefix = ''
+    folder_suffix = data_dir_split[-1]
+    for n in range(len(data_dir_split)-1):
+        folder_prefix += data_dir_split[n]+'/'
+    # If prefix matches exactly with a file, take this file as input
+    # Otherwise take all files with matching prefix
+    if isfile(folder_prefix+'/'+folder_suffix):
+        input_directories = [
+            folder_suffix
+        ]
+    else:
+        input_directories = [
+            path for path in os.listdir(folder_prefix)
+            if path.startswith(folder_suffix)
+        ]
+    return folder_prefix, input_directories
+
+
+def derive_dynamical_content(spectrum: np.array):
+    """Derive the dynamical content D(tau_k) = sum_n s_n^2.
+    The dynamical content is a single observable that describes
+    the full behavior of all observables, weighted by their amplitudes.
 
     Parameters
     ----------
-    array: np.array, 1D or 2D array to be saved
-    folder_path: str, path to folder in which file is stored
-    file_name: str, name of file,
-    comment: str, add description of file to header
+    spectrum: np.array, timescale spectrum with
+            1st column: times tau_k
+            All other columns: amplitues s_n for each observable
+
+    Return
+    ------
+    tau_k: np.array, times corresponding to the timescale spectrum
+    dynamic_content: np.array, dynamical content D(tau_k)
     """
-    # TODO put into i/o
-    os.makedirs(folder_path, exist_ok=True)
-    file_path = os.path.join(folder_path, f'{file_name}')
-    np.savetxt(file_path, array, header=comment)
-    print(f'Saved: {file_path}')
+    # The first entry is removed as it corresponds to an offset that
+    # does not contribute to the dynamics
+    print(spectrum.shape)
+    if spectrum.shape[1] < 2:
+        raise ValueError(
+            "Spectrum must have at least two columns: "
+            "1st column: times tau_k, "
+            "2nd column: amplitudes s_n for each observable"
+        )
+    tau_k = spectrum[1:, 0]
+    dynamic_content = np.sum(spectrum[1:, 1:]**2, axis=1)
+    return tau_k, dynamic_content
 
 
 def calculate_ensemble_average_change(data, abs_val=True):
@@ -75,9 +111,15 @@ def calculate_ensemble_average_change(data, abs_val=True):
     return temp_averaged_change
 
 
-def generate_multi_exp_timetrace(offset, timescales, amplitude, n_steps, sigma=None):
-    """Derive time trace from timescale spectrum via a multi-exponential function:
-    S(t) = s_0-sum_{k=1,K} s_k e^{-t/tau_k}
+def generate_multi_exp_timetrace(
+        offset: float,
+        timescales: np.array,
+        amplitude: np.array,
+        n_steps: int,
+        sigma: float = None):
+    """Derive a time trace from a preset timescale spectrum
+    via a multi-exponential function:
+        S(t) = s_0-sum_{k=1,K} s_k e^{-t/tau_k}
     with amplitude s_k and timescales tau_k.
 
     Parameters
@@ -86,13 +128,16 @@ def generate_multi_exp_timetrace(offset, timescales, amplitude, n_steps, sigma=N
     timescales [ns]: np.array, position of timescales tau_k (log-spaced)
     amplitude: np.array, size of each of the timescales
     n_steps: int, length of exp function
-    sigma: float, standard deviation for Gaussian noise rugging the data (default: None, no noise)
+    sigma: float, standard deviation for Gaussian noise rugging the data
+            (default: None, no noise)
 
     Return
     ------
-    multiExpFunc: np.array, reconstructed multi-exponential function (with optional noise)"""
+    multiExpFunc: np.array, reconstructed multi-exponential function"""
 
-    assert len(timescales) == len(amplitude), '"timescales" and "amplitude" must be of same size!'
+    assert len(timescales) == len(amplitude), (
+        '"timescales" and "amplitude" must be of same size!'
+    )
 
     times = np.arange(n_steps)
     multiExpFunc = np.full(n_steps, offset, dtype=np.float64)
@@ -108,7 +153,7 @@ def generate_multi_exp_timetrace(offset, timescales, amplitude, n_steps, sigma=N
     plt.plot(times, multiExpFunc, c='tab:red')
     plt.xscale('symlog', subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=1)
     plotting.save_fig('multi_exp_function_example.pdf')
-    save_npArray(
+    io.save_npArray(
         np.column_stack(data_points),
         ".",
         "multi_exp_function_example.txt",
@@ -120,10 +165,3 @@ def generate_multi_exp_timetrace(offset, timescales, amplitude, n_steps, sigma=N
             )
 
     return data_points
-
-
-def _reset_class_obj(class_obj):
-    """Reset some parameters of the class to avoid conflicts in the loop due to the applied log-spacing"""
-    class_obj.quant_data_arr = None
-    for data in class_obj.data_arr:
-        class_obj.n_steps = len(data) if len(data) > class_obj.n_steps else class_obj.n_steps
