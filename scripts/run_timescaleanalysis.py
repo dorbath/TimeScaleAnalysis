@@ -84,13 +84,8 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
 
     Exponential time traces can be generated with utils.generate_multi_exp_timetrace().
     """
-    #utils.generate_multi_exp_timetrace(
-    #    offset=1.7,
-    #    timescales=[1e1, 1e2, 1e4],
-    #    amplitude=[0.2, 0.5, 1.0],
-    #    n_steps=100000,
-    #    sigma=0.01
-    #)
+
+    utils.generate_multi_exp_timetrace('scripts/example_json.json')
 
     # Needed for general testing of script
     # If you know your input data (and it is always the same)
@@ -103,9 +98,10 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories(n_traj_conc=26)
+    preP.load_trajectories()
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
+    print(preP.data_mean.shape)
 
     # If input data_path is already preprocessed file, load it directly.
     # The important parameter is Preprocessing.data_dir
@@ -146,10 +142,10 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         # Provide single observable to TSA class
         tsa.options['temp_mean'] = temp_mean
         tsa.options['temp_sem'] = temp_sem
-        regPara = 200
+        regPara = 100
         lag_rates = tsa.perform_tsa(
             regPara=regPara,
-            startTime=1e2,
+            startTime=1e-1,
             posVal=False
         )
         ax1, ax2 = plotting.plot_TSA(
@@ -160,7 +156,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             lag_rates,
             tsa.n_steps
         )
-        ax1.set_xlim(1e2, 1e7)
+        ax1.set_xlim(1e0, 1e5)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
         ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix='r')}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')

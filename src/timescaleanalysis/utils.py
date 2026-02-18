@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import timescaleanalysis.plotting as plotting
 import timescaleanalysis.io as io
 import os
+import json
 from scipy.ndimage import gaussian_filter1d
 
 
@@ -111,12 +112,7 @@ def calculate_ensemble_average_change(data, abs_val=True):
     return temp_averaged_change
 
 
-def generate_multi_exp_timetrace(
-        offset: float,
-        timescales: np.array,
-        amplitude: np.array,
-        n_steps: int,
-        sigma: float = None):
+def generate_multi_exp_timetrace(in_json_file: str):
     """Derive a time trace from a preset timescale spectrum
     via a multi-exponential function:
         S(t) = s_0-sum_{k=1,K} s_k e^{-t/tau_k}
@@ -124,37 +120,79 @@ def generate_multi_exp_timetrace(
 
     Parameters
     ----------
-    offset: float, s_0 in the multi-exp function
-    timescales [ns]: np.array, position of timescales tau_k (log-spaced)
-    amplitude: np.array, size of each of the timescales
-    n_steps: int, length of exp function
-    sigma: float, standard deviation for Gaussian noise rugging the data
-            (default: None, no noise)
+    in_json_file: str, path to json file with parameters for multi-exp function
+        These parameters are:
+            offset: s_0 in the multi-exp function
+            timescales: list of positions of timescales tau_k (log-spaced)
+            amplitude: list of size of each of the timescales
+            n_steps: length of exp function
+            sigma: standard deviation for Gaussian noise rugging the data
+
+        Multiple observables can be generated into a single file
+        by providing lists for each parameter.
 
     Return
     ------
-    multiExpFunc: np.array, reconstructed multi-exponential function"""
+    multiExpFunc: np.array, reconstructed multi-exponential function
 
-    assert len(timescales) == len(amplitude), (
-        '"timescales" and "amplitude" must be of same size!'
-    )
+    Example
+    -------
+    """
 
-    times = np.arange(n_steps)
-    multiExpFunc = np.full(n_steps, offset, dtype=np.float64)
-    for k in range(len(timescales)):
-        exp_val = times / timescales[k]
-        multiExpFunc -= amplitude[k]*np.exp(-exp_val)
-    if sigma is not None:
-        data_points = multiExpFunc + np.random.normal(
-            0, sigma, size=multiExpFunc.shape
+    def _single_time_trace(
+            s_offset: float,
+            s_timescales: np.array,
+            s_amplitude: np.array,
+            s_n_steps: int,
+            s_sigma: float = None):
+        """Generate time trace for a single observable"""
+
+        assert len(s_timescales) == len(s_amplitude), (
+            '"s_timescales" and "s_amplitude" must be of same size!'
         )
 
-    plt.plot(times, data_points, c='k', lw=0, marker='o', markersize=0.1)
-    plt.plot(times, multiExpFunc, c='tab:red')
-    plt.xscale('symlog', subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=1)
-    plotting.save_fig('multi_exp_function_example.pdf')
+        times = np.arange(s_n_steps)
+        multiExpFunc = np.full(s_n_steps, s_offset, dtype=np.float64)
+        for k in range(len(s_timescales)):
+            exp_val = times / s_timescales[k]
+            multiExpFunc -= s_amplitude[k]*np.exp(-exp_val)
+
+        if s_sigma is not None:
+            generated_data = multiExpFunc + np.random.normal(
+                0, s_sigma, size=multiExpFunc.shape
+            )
+        else:
+            generated_data = multiExpFunc
+
+        return generated_data
+
+    # Get n_observables from shape of timescales/offset
+    with open(in_json_file, 'r') as f:
+        generate_params = json.load(f)
+    for key in ['offset', 'timescales', 'amplitude', 'n_steps', 'sigma']:
+        if key not in generate_params.keys():
+            raise KeyError(f"Expected data file to contain '{key}' key!")
+
+    offset = generate_params['offset']
+    timescales = generate_params['timescales']
+    amplitude = generate_params['amplitude']
+    n_steps = generate_params['n_steps']
+    sigma = generate_params['sigma']
+    # Add all raiseException problems for multiple observables
+
+    n_observables = len(offset)
+
+    data_points = np.full((np.max(n_steps).astype(int), n_observables),
+                          None,
+                          dtype=np.float32)
+
+    for n in range(n_observables):
+        data_points[:int(n_steps), n] = _single_time_trace(
+            offset[n], timescales[n], amplitude[n], int(n_steps), sigma[n]
+        )
+
     io.save_npArray(
-        np.column_stack(data_points),
+        data_points,
         ".",
         "multi_exp_function_example.txt",
         comment=(
@@ -163,5 +201,4 @@ def generate_multi_exp_timetrace(
             f"offset={offset}, timescales={timescales}, "
             f"amplitude={amplitude}, sigma={sigma}")
             )
-
     return data_points
