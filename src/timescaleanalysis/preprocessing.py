@@ -21,6 +21,7 @@ class Preprocessing:
     folder_prefix: str, prefix of folder path to data
     input_directories: list, list of input files/trajectories in folder_prefix
              with correct prefix
+    labels_lst: list, list of labels for each observable in the data
 
     Attributes
     ----------
@@ -43,6 +44,7 @@ class Preprocessing:
         self.n_steps = 0
         self.folder_prefix = ''
         self.input_directories = None
+        self.labels_lst = None
 
         self.options = self.DEFAULTS | kwargs
 
@@ -416,6 +418,7 @@ class Preprocessing:
                 [f'x{i+1}' for i in range(self.data_mean.shape[1])],
                 dtype=str
             )
+        self.labels_lst = labels_lst
 
         # Save data in json file
         output_dic = {

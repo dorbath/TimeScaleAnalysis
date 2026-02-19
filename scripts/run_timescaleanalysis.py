@@ -79,22 +79,44 @@ plotting._color_cycle()
 )
 def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     """
-    ADD HEADER
+    This script presents the largest set of possible analyses.
+    Each step is exemplary shown for a set of observables:
+        1) Generation of multi-exponential time traces
+            (utils.generate_multi_exp_timetrace())
+        2) Preprocessing of trajectory data (preprocessing.Preprocessing)
+        3) Plotting of time-dependent population distributions
+            (supplementary_analyses.get_population_heatmaps())
+        4) Timescale analysis (timescales.TimeScaleAnalysis)
+        5) Plotting of time traces and timescale spectra (plotting.plot_TSA())
+        6) Log-periodic oscillations in single observables
+            (supplementary_analyses.fit_log_periodic_oscillations())
+        7) Derivation of dynamical content (utils.derive_dynamical_content())
 
-    Exponential time traces can be generated with utils.generate_multi_exp_timetrace().
+    For the recommended workflow, see README.md or 'minimal_example.py'.
+
+    The results can be reproduced by calling in your consol:
+    >>> ./scripts/run_timescaleanalysis.py
+    ...     -dpp /scripts/example_multiExp_3Observables_traj
+    ...     -nD 7
+    ...     -o ./test_output/
+    where the generated time traces were defined by the json file
+    'scripts/example_json.json' (it was run 3 times to generate 3
+    trajectories with random gaussian noise applied)
     """
-
+    ###########################################################################
     # Generate multi-exponential time traces with perfectly known
     # timescales, amplitudes.
-    #utils.generate_multi_exp_timetrace(
-    #    'scripts/example_json.json',
-    #    output_path='.',
-    #    output_file='multi_exp_function_example.txt'
-    #)
+    utils.generate_multi_exp_timetrace(
+        'scripts/example_json.json',
+        output_path='.',
+        output_file='multi_exp_function_example.txt'
+    )
+    ###########################################################################
 
     # Needed for general testing of script.
     # If you know your input data adjust the steps as you please.
     preP = None
+    ###########################################################################
     # Perform preprocessing
     preP = Preprocessing(
         data_path,
@@ -102,22 +124,26 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories(n_traj_conc=26)
+    preP.load_trajectories()
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
+    ###########################################################################
 
+    ###########################################################################
     # Plot heatmaps of each observable.
     # These are time-dependent population distributions
     # which reveal the collective shift in observables.
     # It may be advantageous to perform scipy.ndimage.gaussian_filter
     # onto the single heatmap prior to plotting.
     heatmaps = suppAna.get_population_heatmaps(
-        preP, lowBound=1e2, upBound=1e7, valueRange=[0.2, 1.1]
+        preP, lowBound=1e2, upBound=1e7, valueRange=[0.0, 4.5]
     )
     for i in range(len(heatmaps[2])):
         plotting.plot_2D_histogram(heatmaps[0], heatmaps[1], heatmaps[2][i])
         plotting.save_fig(f'{output_path}/time_dependent_distribution_{i}.pdf')
+    ###########################################################################
 
+    ###########################################################################
     # If input data_path is already preprocessed file, load it directly.
     # The important parameter is Preprocessing.data_dir from which
     # the preprocess data is loaded.
@@ -128,9 +154,9 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         "Preprocessing.save_preprocessed_data() must be used to save "
         "the preprocessed data."
     )
+    ###########################################################################
 
     # Alternatively, directly put data_path into the TSA class
-    # >>> TimeScaleAnalysis(data_path, fit_n_decades)
     tsa = TimeScaleAnalysis(preP.data_dir, fit_n_decades)
     tsa.load_data()
 
@@ -139,10 +165,15 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         (tsa.fit_n_decades*10+1)*2,
         dtype=np.float64).reshape((2, (tsa.fit_n_decades*10+1))).T
 
-    tsa.interpolate_data_points(iterations=2)  # interpolate additional data points as mean
-    tsa.log_space_data(5000)  # transform linear frames into log ones
-    tsa.extend_timeTrace()  # append additional frames for better convergence
+    # Interpolate additional data points as mean values
+    tsa.interpolate_data_points(iterations=2)
+    # Transform linear frames into logarithmic ones
+    tsa.log_space_data(5000)
+    # Append additional frames for a better convergence of the fit
+    tsa.extend_timeTrace()
 
+    ###########################################################################
+    # Perform timescale analysis for each observable and plot the results.
     store_spectrum = []  # list that is filled which the amplitudes
     for idxObs in range(tsa.data_mean.shape[1]):
         temp_mean = utils.gaussian_smooth(tsa.data_mean[:, idxObs], 6)
@@ -162,10 +193,10 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         # Provide single observable to TSA class
         tsa.options['temp_mean'] = temp_mean
         tsa.options['temp_sem'] = temp_sem
-        regPara = 100
+        regPara = 10
         lag_rates = tsa.perform_tsa(
             regPara=regPara,
-            startTime=1e2,
+            startTime=1e-1,
             posVal=False
         )
         ax1, ax2 = plotting.plot_TSA(
@@ -176,7 +207,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             lag_rates,
             tsa.n_steps
         )
-        ax1.set_xlim(1e2, 1e7)
+        ax1.set_xlim(1e-1, 1e5)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
         ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix='r')}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')
@@ -189,33 +220,35 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
 
         #######################################################################
         # This part is only of interest for log-periodic oscillation studies  #
-        #
-        #fit_range = [1e0, 1e5]
-        #ax1, ax_insert, fitParameters = suppAna.fit_log_periodic_oscillations(
-        #    temp_mean,
-        #    tsa.times,
-        #    fit_range,
-        #    popt=(0.2, 2.0, 0.0, 1.0, 1.0, -2)
-        #)
-        #ax1.set_xlim(1e-1, 1e6)
-        #ax_insert.set_xlim(1e-1, 1e6)
-        #ax1.set_xlabel(r'$t/\tau_k$ [ns]')
-        #ax1.set_ylabel(f'{temp_label}(t)')
-        #plotting.save_fig(f'{output_path}/log_periodic_fit_{idxObs}.pdf')
-        #io.save_npArray(
-        #    fitParameters,
-        #    output_path,
-        #    f'log_periodic_{idxObs}_FitParameters.txt',
-        #    comment=(
-        #        f'Fit parameters of log-periodic oscillation fit for observable {tsa.labels[idxObs]}:\n'
-        #        f'First line are the fit parameters, second line their standard error.\n'
-        #        f'Columns: a0, tau, sa, sb, sc, phi\n'
-        #        f'Fit function: f(t) = sa + sb*t^a0 + sc*t^a0*cos(2pi/tau*log10(t)+phi)\n'
-        #        f'Fit range: {fit_range[0]} to {fit_range[1]}.'
-        #    )
-        #)
+        fit_range = [1e0, 1e5]
+        ax1, ax_insert, fitParameters = suppAna.fit_log_periodic_oscillations(
+            temp_mean,
+            tsa.times,
+            fit_range,
+            popt=(0.2, 2.0, 0.0, 1.0, 1.0, -2)
+        )
+        ax1.set_xlim(1e-1, 1e6)
+        ax_insert.set_xlim(1e-1, 1e6)
+        ax1.set_xlabel(r'$t/\tau_k$ [ns]')
+        ax1.set_ylabel(f'{temp_label}(t)')
+        plotting.save_fig(f'{output_path}/log_periodic_fit_{idxObs}.pdf')
+        io.save_npArray(
+            fitParameters,
+            output_path,
+            f'log_periodic_{idxObs}_FitParameters.txt',
+            comment=(
+                f'Fit parameters of log-periodic oscillation fit for observable {tsa.labels[idxObs]}:\n'
+                f'First line are the fit parameters, second line their standard error.\n'
+                f'Columns: a0, tau, sa, sb, sc, phi\n'
+                f'Fit function: f(t) = sa + sb*t^a0 + sc*t^a0*cos(2pi/tau*log10(t)+phi)\n'
+                f'Fit range: {fit_range[0]} to {fit_range[1]}.'
+            )
+        )
         #######################################################################
+    ###########################################################################
 
+    # Store timescale spectra of each observable for post-analyses
+    # This is especially useful if multiple dynamical contents are compared
     io.save_npArray(
         np.column_stack([store_time] + store_spectrum),
         output_path,
@@ -229,17 +262,20 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         )
     )
 
+    ###########################################################################
     # Once the analysis is performed, all spectra can be directly reloaded
     # and the dynamical content can be derived
     loaded_spectrum = io.load_npArray(output_path, 'timescale_spectra')
     temp_tau_k, temp_dyn_cont = utils.derive_dynamical_content(loaded_spectrum)
+    ###########################################################################
 
+    ###########################################################################
     # In some cases, multiple dynamical contents are compared (e.g. different
     # selection of observables, different regularization parameters etc.).
     # In this case, multiple 'timescale_spectra' must be loaded and then can
     # be easily plotted into the same figure with the ax=ax1 parameter.
     ax1 = plotting.plot_dynamical_content(temp_tau_k, temp_dyn_cont)
-    ax1.set_xlim(1e2, 1e7)
+    ax1.set_xlim(1e-1, 1e5)
     ax1.set_ylim(0, ax1.get_ylim()[1])
     plotting.save_fig(f'{output_path}/dynamical_content.pdf')
 
@@ -254,10 +290,9 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             f'fit parameters={tsa.fit_n_decades*10+1}'
         )
     )
+    ###########################################################################
 
     sys.exit()
-
-    #plotting.plot_value_heatmaps(tsa.quant_data_arr, col, tsa.times*1e9, output_path=output_path)
 
     #ensemble_averaged_change = []
     ## Derive ensemble average change (for each column/distance in cluster)
@@ -272,9 +307,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     #plt.gca().set_ylim(-0.15, 0.15)
     #pplt.legend(outside='top', ncols=4, fontsize=7)
     #utils.save_fig(f'{output_path}/ensemble_averaged_change_PDZ3.pdf')
-
-    ## TODO: Add 2D plot of TSA of each distance vs time
-
 
 
 if __name__ == '__main__':
