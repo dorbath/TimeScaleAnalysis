@@ -11,8 +11,7 @@ as they please, e.g. the used labels for plots, time steps etc.
 
 __author__ = "Emanuel Dorbath"
 
-from genericpath import isfile, isdir
-from tokenize import Comment
+from genericpath import isfile 
 import numpy as np
 import matplotlib.pyplot as plt
 import prettypyplot as pplt
@@ -85,11 +84,16 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     Exponential time traces can be generated with utils.generate_multi_exp_timetrace().
     """
 
-    utils.generate_multi_exp_timetrace('scripts/example_json.json')
+    # Generate multi-exponential time traces with perfectly known
+    # timescales, amplitudes.
+    #utils.generate_multi_exp_timetrace(
+    #    'scripts/example_json.json',
+    #    output_path='.',
+    #    output_file='multi_exp_function_example.txt'
+    #)
 
-    # Needed for general testing of script
-    # If you know your input data (and it is always the same)
-    # Adjust the steps as you please
+    # Needed for general testing of script.
+    # If you know your input data adjust the steps as you please.
     preP = None
     # Perform preprocessing
     preP = Preprocessing(
@@ -98,13 +102,25 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories()
+    preP.load_trajectories(n_traj_conc=26)
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
-    print(preP.data_mean.shape)
+
+    # Plot heatmaps of each observable.
+    # These are time-dependent population distributions
+    # which reveal the collective shift in observables.
+    # It may be advantageous to perform scipy.ndimage.gaussian_filter
+    # onto the single heatmap prior to plotting.
+    heatmaps = suppAna.get_population_heatmaps(
+        preP, lowBound=1e2, upBound=1e7, valueRange=[0.2, 1.1]
+    )
+    for i in range(len(heatmaps[2])):
+        plotting.plot_2D_histogram(heatmaps[0], heatmaps[1], heatmaps[2][i])
+        plotting.save_fig(f'{output_path}/time_dependent_distribution_{i}.pdf')
 
     # If input data_path is already preprocessed file, load it directly.
-    # The important parameter is Preprocessing.data_dir
+    # The important parameter is Preprocessing.data_dir from which
+    # the preprocess data is loaded.
     if preP is None:
         preP = Preprocessing(data_path)
     assert isfile(preP.data_dir), (
@@ -113,6 +129,8 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         "the preprocessed data."
     )
 
+    # Alternatively, directly put data_path into the TSA class
+    # >>> TimeScaleAnalysis(data_path, fit_n_decades)
     tsa = TimeScaleAnalysis(preP.data_dir, fit_n_decades)
     tsa.load_data()
 
@@ -132,6 +150,8 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         temp_label = tsa.labels[idxObs]
         # It can be helpful to rescale the data to be more sensitive
         # This is especially the case for small distances and angles
+
+        # TODO put into separate function
         if False:
             "Scan through several regularization parameters to find the best one"
             regPara, P_Bayes = tsa.perform_tsa(regPara=[1,3,5,7,10,20,30,40,50,60,70,80,90,100], startTime=1e-10)
@@ -145,7 +165,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         regPara = 100
         lag_rates = tsa.perform_tsa(
             regPara=regPara,
-            startTime=1e-1,
+            startTime=1e2,
             posVal=False
         )
         ax1, ax2 = plotting.plot_TSA(
@@ -156,7 +176,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             lag_rates,
             tsa.n_steps
         )
-        ax1.set_xlim(1e0, 1e5)
+        ax1.set_xlim(1e2, 1e7)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
         ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix='r')}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')

@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 import timescaleanalysis.plotting as plotting
+import timescaleanalysis.preprocessing as preprocessing
 
 
 def fit_log_periodic_oscillations(
@@ -126,3 +127,98 @@ def fit_log_periodic_oscillations(
     ax_insert.tick_params(direction='in', which='both', labelsize=8)
 
     return ax1, ax_insert, np.vstack([popt, np.sqrt(np.diag(pcov))])
+
+
+def get_population_heatmaps(
+        preP: preprocessing,
+        lowBound: float = 1e0,
+        upBound: float = 1e3,
+        valueRange: list = None):
+    """
+    Get time-dependent populations for all observables.
+    For each time bin (x-axis), a population distribution is derived
+    for the observable values (y-axis). The entries in each bin (z-axis)
+    are normalized for the respective time bin, i.e., the population
+    is restricted to [0,1].
+
+    Parameters
+    ----------
+    preP: preProcessing object, used to access data
+    lowBound: float, lower boundary of time range for heatmap (default: 1e0)
+    upBound: float, upper boundary of time range for heatmap (default: 1e3)
+
+    Return
+    ------
+    time_bins: np.array, edges of time bins used for the heatmap
+    value_bins: np.array, edges of value bins used for the heatmap
+    heatmaps: list of np.array, each array is a 2D histogram for one observable
+    """
+    def _get_values_single_time_bin(
+            t_bin: int,
+            time_bins: np.array,
+            times_arr: np.array,
+            value_arr: np.array,
+            ):
+        """Get observable values for a single time bin."""
+        time_start, time_end = time_bins[t_bin], time_bins[t_bin + 1]
+        time_indices = (
+            np.around(times_arr, decimals=6) > time_start
+            ) & (
+            np.around(times_arr, decimals=6) <= time_end
+            )
+        values_in_bin = value_arr[:, time_indices].flatten()
+        return values_in_bin
+
+    # Number of covered decades in time
+    n_decades = np.ceil(np.log10(upBound) - np.log10(lowBound))
+    n_t_bins = int(n_decades*10 + 1)  # total number of bins
+    # Target: 10 bins per decade as for TSA fit
+    n_bins_per_decade = 10
+    time_bins = np.zeros(n_t_bins, dtype=np.float64)
+    for k in range(1, n_t_bins):
+        time_bins[k] = 10**((1-k)/n_bins_per_decade)
+
+    # Scale time bins to actual time range
+    time_bins[1:] = lowBound/time_bins[1:]
+    time_bins[0] = 0
+    time_bins = np.append(time_bins, upBound)
+    if valueRange is None:
+        lowVal = np.min(preP.data_arr)
+        upVal = np.max(preP.data_arr)
+        value_bins = np.arange(lowVal, upVal, 1/100)
+    else:
+        if valueRange[0] >= valueRange[1]:
+            raise ValueError(
+                "Lower boundary of 'valueRange' must be smaller "
+                "than upper boundary!"
+            )
+        value_bins = np.arange(valueRange[0], valueRange[1], 1/100)
+
+    time_bin_count = len(time_bins) - 1  # Number of time bins
+    value_bin_count = len(value_bins) - 1  # Number of value bins
+
+    heatmaps = []
+    for i in range(np.shape(preP.data_arr)[2]):
+        # Load each observable
+        temp_arr = np.asarray(preP.data_arr)[:, :, i]
+
+        single_heatmap = np.zeros((value_bin_count, time_bin_count))
+        for t_bin in range(time_bin_count):
+            values_in_bin = _get_values_single_time_bin(
+                t_bin,
+                time_bins,
+                preP.options['times'],
+                temp_arr
+            )
+
+            # Derive for the current time bin the population distribution
+            hist, bbins = np.histogram(values_in_bin, bins=value_bins)
+            single_heatmap[:, t_bin] += hist
+
+        # Normalize the heatmap values [0,1]
+        single_heatmap /= single_heatmap.sum(axis=0, keepdims=True)
+        single_heatmap[np.isnan(single_heatmap)] = 0.0
+        heatmaps.append(single_heatmap)
+
+    return time_bins, value_bins, heatmaps
+

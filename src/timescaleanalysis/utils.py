@@ -112,11 +112,18 @@ def calculate_ensemble_average_change(data, abs_val=True):
     return temp_averaged_change
 
 
-def generate_multi_exp_timetrace(in_json_file: str):
+def generate_multi_exp_timetrace(
+        in_json_file: str,
+        output_path: str = None,
+        output_file: str = None):
     """Derive a time trace from a preset timescale spectrum
     via a multi-exponential function:
         S(t) = s_0-sum_{k=1,K} s_k e^{-t/tau_k}
     with amplitude s_k and timescales tau_k.
+
+    This can be very help full to understand the behaviour of
+    the multi-exponential function and to test the TSA on a known
+    timescales to reproduce the timescale spectrum.
 
     Parameters
     ----------
@@ -130,13 +137,28 @@ def generate_multi_exp_timetrace(in_json_file: str):
 
         Multiple observables can be generated into a single file
         by providing lists for each parameter.
+    output_path: str, path to output directory (default: current directory)
+    output_file: str, name of output file with generated time traces
+            (default: 'multi_exp_function_example.txt')
 
     Return
     ------
     multiExpFunc: np.array, reconstructed multi-exponential function
 
-    Example
-    -------
+    Example:
+    --------
+    >>> # Generate json file with such a structure:
+    >>> # Safe it as '/path/to/json.json'
+    >>> {"offset": [1.7, 1.2, 4.4],
+    ...  "timescales": [ [1e1, 1e2, 1e4], [3e1, 7e3], [1e2, 3e3, 1e4] ],
+    ...  "amplitude": [ [0.2, 0.5, 1.0], [0.5, 0.5], [0.7, 0.9, 2.3] ],
+    ...  "n_steps": 2e5,
+    ...  "sigma": [0.01, 0.005, 0.02]
+    ... }
+    >>> generate_multi_exp_timetrace(
+    ...     '/path/to/json.json',
+    ...     output_path='/path/to/output',
+    ...     output_file='output_data.txt')
     """
 
     def _single_time_trace(
@@ -178,27 +200,46 @@ def generate_multi_exp_timetrace(in_json_file: str):
     amplitude = generate_params['amplitude']
     n_steps = generate_params['n_steps']
     sigma = generate_params['sigma']
-    # Add all raiseException problems for multiple observables
+
+    arr_lengths = [len(arr) for arr in [offset, timescales, amplitude, sigma]]
+    if len(set(arr_lengths)) != 1:
+        raise ValueError(
+            "'offset', 'timescales', 'amplitude', and 'sigma' "
+            f"must be of same size! Check {in_json_file}."
+        )
 
     n_observables = len(offset)
-
     data_points = np.full((np.max(n_steps).astype(int), n_observables),
                           None,
                           dtype=np.float32)
 
+    # Generate a time trace for each observable
     for n in range(n_observables):
         data_points[:int(n_steps), n] = _single_time_trace(
             offset[n], timescales[n], amplitude[n], int(n_steps), sigma[n]
         )
 
+    # Make a good header with all relevant information
+    output_header = [
+        f"Observable {n+1}: "
+        f"offset={offset[n]}, timescales={timescales[n]}, "
+        f"amplitude={amplitude[n]}, sigma={sigma[n]}\n"
+        for n in range(n_observables)
+    ]
+    if output_path is None:
+        output_path = "."
+    if output_file is None:
+        output_file = "multi_exp_function_example.txt"
+
     io.save_npArray(
         data_points,
-        ".",
-        "multi_exp_function_example.txt",
+        output_path,
+        output_file,
         comment=(
             f"Multi-exponential function with noise\n"
-            f"Columns: time [ns], S(t) [nm]\n Parameters: "
-            f"offset={offset}, timescales={timescales}, "
-            f"amplitude={amplitude}, sigma={sigma}")
+            f"Each row corresponds to a time step (n_steps={int(n_steps)}\n"
+            f"Columns: observables S_n(t) [nm]\n"
+            f"Parameters of each observable: \n"
+            f"{''.join(output_header)}")
             )
     return data_points

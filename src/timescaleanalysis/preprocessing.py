@@ -4,6 +4,7 @@ from genericpath import isfile, isdir
 import numpy as np
 import os
 import timescaleanalysis.io as io
+import sys
 
 
 class Preprocessing:
