@@ -4,7 +4,7 @@ from genericpath import isfile, isdir
 import numpy as np
 import os
 import timescaleanalysis.io as io
-import sys
+import glob as glob
 
 
 class Preprocessing:
@@ -42,35 +42,38 @@ class Preprocessing:
         self.data_mean = None
         self.data_sem = None
         self.n_steps = 0
-        self.folder_prefix = ''
         self.input_directories = None
         self.labels_lst = None
 
         self.options = self.DEFAULTS | kwargs
 
-    def generate_input_trajectories(self):
+    def generate_input_trajectories(self) -> None:
         """Get all files/trajectories in 'data_path' with the correct prefix.
         All files that fulfill data_path* are taken as input.
         """
 
         # Isolate folder path and trajectory prefix
-        data_path_split = self.data_dir.split("/")
-        folder_suffix = data_path_split[-1]
-        for n in range(len(data_path_split)-1):
-            self.folder_prefix += data_path_split[n]+'/'
-        # If prefix matches exactly with a file, take this file as input
-        # Otherwise take all files with matching prefix
-        if isfile(self.folder_prefix+'/'+folder_suffix):
-            self.input_directories = [
-                folder_suffix
-            ]
-        else:
-            self.input_directories = [
-                path for path in os.listdir(self.folder_prefix)
-                if path.startswith(folder_suffix)
-            ]
+        #data_path_split = self.data_dir.split("/")
+        #if len(data_path_split) == 1:
+        #    data_path_split = ['.', data_path_split[0]]
 
-    def load_absorption_spectra(self):
+        #folder_suffix = data_path_split[-1]
+        #for n in range(len(data_path_split)-1):
+        #    self.folder_prefix += data_path_split[n]+'/'
+        ## If prefix matches exactly with a file, take this file as input
+        ## Otherwise take all files with matching prefix
+        #if isfile(self.folder_prefix+'/'+folder_suffix):
+        #    self.input_directories = [
+        #        folder_suffix
+        #    ]
+        #else:
+        #    self.input_directories = [
+        #        path for path in os.listdir(self.folder_prefix)
+        #        if path.startswith(folder_suffix)
+        #    ]
+        self.input_directories = glob.glob(self.data_dir+'*')
+
+    def load_absorption_spectra(self) -> None:
         """Load single absorption spectrum of experimental
         data and corresponding times and frequencies"""
         # TODO Add here the 1D (Exp data) part
@@ -96,18 +99,16 @@ class Preprocessing:
                 2nd with standard error of the mean (SEM). (default: False)
         """
 
-        def _load_single_file(folder_dir: str,
-                              file_name: str,
+        def _load_single_file(file_name: str,
                               precision=np.float32,
                               averaged: bool = False,
-                              verbose: bool = False):
+                              verbose: bool = False) -> np.array:
             """Load a single trajectory file
             Delimiter is assumed to be whitespace,
             comment lines starting with '#' are ignored.
 
             Parameters
             ----------
-            folder_dir: str, path to folder with trajectories
             file_name: str, name of single file/trajectory in folder_dir
             precision: np.float16/32/64, precision of loaded data
                     (default: np.float32)
@@ -123,13 +124,13 @@ class Preprocessing:
                 raise TypeError(
                     "precision must be a NumPy float dtype (np.float16/32/64)"
                 )
-            if not isfile(folder_dir+'/'+file_name):
+            if not isfile(file_name):
                 raise FileNotFoundError(
-                    f"File {folder_dir+'/'+file_name} does not exist!"
+                    f"File {file_name} does not exist!"
                 )
 
             temp_load = np.loadtxt(
-                folder_dir+'/'+file_name,
+                file_name,
                 dtype=precision,
                 comments='#',
             )
@@ -145,19 +146,18 @@ class Preprocessing:
                     "2D array given, each column is assumed as coordinate "
                     "of same trajectory!",
                     category=Warning,
-                    filename=folder_dir+'/'+file_name,
+                    filename=file_name,
                     lineno=0
                 )
             return temp_load
 
-        def _load_averaged_trajectory():
+        def _load_averaged_trajectory() -> None:
             if len(self.input_directories) != 1:
                 raise ValueError(
                     "If trajectory is already averaged, "
                     "only one file should be provided as input!"
                 )
             temp_traj = _load_single_file(
-                self.folder_prefix,
                 self.input_directories[0],
                 np.float32,
                 averaged=True
@@ -173,7 +173,7 @@ class Preprocessing:
             self.data_arr.append(temp_traj)
             self.n_steps = len(temp_traj)
 
-        def _load_concatenated_trajectories(n_traj_conc: int):
+        def _load_concatenated_trajectories(n_traj_conc: int) -> None:
             if not isinstance(n_traj_conc, int):
                 raise TypeError("n_traj_conc must be an integer")
             if n_traj_conc <= 0:
@@ -182,7 +182,6 @@ class Preprocessing:
             for inDir in self.input_directories:
                 print(inDir)
                 temp_traj = _load_single_file(
-                    self.folder_prefix,
                     inDir,
                     np.float16
                 )
@@ -200,11 +199,10 @@ class Preprocessing:
                     if length_per_traj > self.n_steps:
                         self.n_steps = length_per_traj
 
-        def _load_multiple_trajectories():
+        def _load_multiple_trajectories() -> None:
             for inDir in self.input_directories:
                 print(inDir)
                 temp_traj = _load_single_file(
-                    self.folder_prefix,
                     inDir,
                     np.float32
                 )
@@ -236,7 +234,7 @@ class Preprocessing:
                 self.reshape_same_length()
             self.derive_average_trajectory()
 
-    def reshape_same_length(self, insert_nan: bool = True):
+    def reshape_same_length(self, insert_nan: bool = True) -> None:
         """Ensure that all trajectories are of same length
         by extending/appending constant values.
         This makes calculations with numpy much more efficient.
@@ -249,7 +247,7 @@ class Preprocessing:
         def _reshape_single_trajectory(
                 trajectory: np.array,
                 n_steps: int,
-                insert_nan: bool = True):
+                insert_nan: bool = True) -> np.array:
             """Reshape a single trajectory to match the shape of the longest
                trajectory by extending/appending constant values.
 
@@ -294,7 +292,7 @@ class Preprocessing:
                 insert_nan=insert_nan,
             )
 
-    def derive_average_trajectory(self):
+    def derive_average_trajectory(self) -> None:
         """"Average data for each column"""
         # Correct number of simulations at each timestep (relevant if reshaped)
         n_sim_not_nan = np.sum(~np.isnan(self.data_arr), axis=0)
@@ -307,9 +305,9 @@ class Preprocessing:
             axis=0, ddof=0, dtype=np.float32
         )/np.sqrt(n_sim_not_nan)
 
-    def get_time_array(self):
+    def get_time_array(self) -> None:
         """Derive time array for the data"""
-        def _load_simulation_parameters():
+        def _load_simulation_parameters() -> None:
             """Get simulaitons parameters from .mdp file and create time array
             Be aware of the used units in the file (usually dt is given in ps)
             """
@@ -341,7 +339,7 @@ class Preprocessing:
                 0, self.n_steps, 1, dtype=np.float64
             )
 
-    def save_preprocessed_data(self, output_path: str = None):
+    def save_preprocessed_data(self, output_path: str = None) -> None:
         """Save preprocessed data as json file.
         Preprocessing step can be skipped with saved files
 

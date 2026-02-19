@@ -8,7 +8,7 @@ def save_npArray(
         array: np.array,
         folder_path: str,
         file_name: str,
-        comment: str = ''):
+        comment: str = '') -> None:
     """Store a np.array in 'file_path/file_name'
 
     Parameters
@@ -24,7 +24,7 @@ def save_npArray(
     print(f'Saved: {file_path}')
 
 
-def load_npArray(folder_path: str, file_name: str):
+def load_npArray(folder_path: str, file_name: str) -> np.array:
     """Load a np.array from 'file_path/file_name'
 
     Parameters
@@ -46,9 +46,10 @@ def load_npArray(folder_path: str, file_name: str):
         return load_array
 
 
-def save_json(output_dic: dict, output_path: str):
+def save_json(output_dic: dict, output_path: str) -> str:
     """Save a dictionary as json file in 'output_path/preprocessed_data.json'.
-    If this file already exists, add a counter to the file name to avoid overwriting.
+    If this file already exists, add a counter to the file name
+    to avoid overwriting an exisiting file.
 
     Parameters
     ----------

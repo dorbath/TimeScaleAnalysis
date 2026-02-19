@@ -8,7 +8,10 @@ import json
 from scipy.ndimage import gaussian_filter1d
 
 
-def gaussian_smooth(data: np.array, sigma: float, mode: str = 'nearest'):
+def gaussian_smooth(
+        data: np.array,
+        sigma: float,
+        mode: str = 'nearest') -> np.array:
     """Perform Gaussian smoothing/filter
 
     Parameters
@@ -25,9 +28,19 @@ def gaussian_smooth(data: np.array, sigma: float, mode: str = 'nearest'):
     return gaussian_filter1d(data, sigma, mode=mode)
 
 
-def generate_input_trajectories(file_dir: str):
+def generate_input_trajectories(
+        file_dir: str) -> tuple:
     """Get all files/trajectories in 'file_dir' with the correct prefix.
     All files that fulfill file_dir* are taken as input.
+
+    Parameters
+    ----------
+    file_dir: str, path to file or folder with trajectories
+
+    Return
+    ------
+    folder_prefix: str, path to folder with trajectories
+    input_directories: list of str, list of files with trajectories
     """
     # Isolate folder path and trajectory prefix
     data_dir_split = file_dir.split("/")
@@ -49,7 +62,8 @@ def generate_input_trajectories(file_dir: str):
     return folder_prefix, input_directories
 
 
-def derive_dynamical_content(spectrum: np.array):
+def derive_dynamical_content(
+        spectrum: np.array) -> tuple:
     """Derive the dynamical content D(tau_k) = sum_n s_n^2.
     The dynamical content is a single observable that describes
     the full behavior of all observables, weighted by their amplitudes.
@@ -67,7 +81,6 @@ def derive_dynamical_content(spectrum: np.array):
     """
     # The first entry is removed as it corresponds to an offset that
     # does not contribute to the dynamics
-    print(spectrum.shape)
     if spectrum.shape[1] < 2:
         raise ValueError(
             "Spectrum must have at least two columns: "
@@ -115,7 +128,7 @@ def calculate_ensemble_average_change(data, abs_val=True):
 def generate_multi_exp_timetrace(
         in_json_file: str,
         output_path: str = None,
-        output_file: str = None):
+        output_file: str = None) -> np.array:
     """Derive a time trace from a preset timescale spectrum
     via a multi-exponential function:
         S(t) = s_0-sum_{k=1,K} s_k e^{-t/tau_k}
@@ -143,7 +156,7 @@ def generate_multi_exp_timetrace(
 
     Return
     ------
-    multiExpFunc: np.array, reconstructed multi-exponential function
+    data_points: np.array, reconstructed multi-exponential function
 
     Example:
     --------
@@ -166,7 +179,7 @@ def generate_multi_exp_timetrace(
             s_timescales: np.array,
             s_amplitude: np.array,
             s_n_steps: int,
-            s_sigma: float = None):
+            s_sigma: float = None) -> np.array:
         """Generate time trace for a single observable"""
 
         assert len(s_timescales) == len(s_amplitude), (

@@ -17,7 +17,7 @@ def derive_tsa_spectrum(
         lag_rates: np.array,
         initValues: np.array = None,
         posVal: bool = False,
-        RegParaSearch: bool = False):
+        RegParaSearch: bool = False) -> np.array:
     """Perform multi-exponential fit to get spectrum of TSA.
     The fit function has the form: S(t) = SUM s_k exp(-t/tau_k)
     where the amplitudes s_k are fitted for given lag rates (1/tau_k).
@@ -211,7 +211,7 @@ class TimeScaleAnalysis:
 
         self.options = self.DEFAULTS | kwargs
 
-    def load_data(self):
+    def load_data(self) -> None:
         """Load preprocessed data with the correct shape"""
         with open(self.data_file) as f:
             data_json = json.load(f)
@@ -224,7 +224,12 @@ class TimeScaleAnalysis:
         self.labels = np.array(data_json['labels'], dtype=str)
         self.n_steps = len(self.times)
 
-    def interpolate_data_points(self, iterations: int = 1):
+        # Catch 1D arrays of shape (N,) and convert them to (N,1)
+        if self.data_mean.ndim == 1:
+            self.data_mean = np.expand_dims(self.data_mean, axis=1)
+            self.data_sem = np.expand_dims(self.data_sem, axis=1)
+
+    def interpolate_data_points(self, iterations: int = 1) -> None:
         """Interpolate additional frames as mean between neighboring frames
 
         Parameters
@@ -232,7 +237,7 @@ class TimeScaleAnalysis:
         iterations: int, number of times to perform interpolation,
                     each iteration doubles the number of frames
         """
-        def interpolation_step(interpArr: np.array):
+        def interpolation_step(interpArr: np.array) -> np.array:
             """Interpolate neighboring frames by average
 
             Parameters
@@ -278,7 +283,7 @@ class TimeScaleAnalysis:
             self.data_sem = interpolation_step(self.data_sem)
             self.n_steps = len(self.times)
 
-    def log_space_data(self, target_n_steps: int):
+    def log_space_data(self, target_n_steps: int) -> None:
         """Convert the linear data set into a log-spaced one
         Perfect log-spacing is not possible, since the frames are integers
         and thus for the first few decades the log-spacing is more linear.
@@ -306,7 +311,7 @@ class TimeScaleAnalysis:
         self.times = self.times[log_spaced_index_mask]
         self.n_steps = len(log_spaced_index_mask)
 
-    def extend_timeTrace(self):
+    def extend_timeTrace(self) -> None:
         """Append one order of magnitude to the data by a constant value
         derived as average over ~1/2 decade.
         On a log-scale, the final half decade is rather short."""
@@ -365,7 +370,7 @@ class TimeScaleAnalysis:
                     regPara: float | list,
                     startTime: float = 1e0,
                     posVal: bool = False,
-                    initValues: np.array = None):
+                    initValues: np.array = None) -> None:
         """Perform the timescale analysis S(t) = SUM a_k exp(-t/tau_k)
         The lag rates (1/tau_k) are log-spaced with 10 points per decade
         and the amplitudes a_k are fitted, revealing dynamical processes.

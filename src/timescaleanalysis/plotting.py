@@ -1,9 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from scipy.ndimage import gaussian_filter
 import prettypyplot as pplt
-from skimage.filters import threshold_multiotsu
 
 
 def plot_TSA(
@@ -12,7 +10,7 @@ def plot_TSA(
         spectrum: np.array,
         times: np.array,
         lag_rates: np.array,
-        n_steps: int):
+        n_steps: int) -> tuple:
     """Plot for each observable the averaged time trace and timescale spectrum"""
     upper_bound = np.add(data_mean, data_sem)
     lower_bound = np.subtract(data_mean, data_sem)
@@ -46,7 +44,7 @@ def plot_TSA(
 def plot_dynamical_content(
         times: np.array,
         dynamic_content: np.array,
-        ax: mpl.axes = None):
+        ax: mpl.axes = None) -> mpl.axes:
     """Plot dynamical content D(tau_k) = sum_n s_n^2.
     The dynamical content is a single observable that describes
     the full behavior of all observables, weighted by their amplitudes.
@@ -70,7 +68,7 @@ def plot_dynamical_content(
     return ax
 
 
-def plot_2D_histogram(xVal, yVal, zVals):
+def plot_2D_histogram(xVal, yVal, zVals) -> None:
     """Plot 2D histogram of two observables.
 
     Parameters
@@ -93,7 +91,9 @@ def plot_2D_histogram(xVal, yVal, zVals):
     _log_axis(plt.gca(), 'x')
 
 
-def get_alpha_cmap(cmap: str, alpha_fraction: float = 0.1):
+def get_alpha_cmap(
+        cmap: str,
+        alpha_fraction: float = 0.1) -> mpl.colors.ListedColormap:
     """Add alpha channel to cmap for better contrast"""
     cmap = plt.get_cmap(cmap)
     cmap_alpha = cmap(np.arange(cmap.N))
@@ -106,7 +106,7 @@ def get_alpha_cmap(cmap: str, alpha_fraction: float = 0.1):
     return mpl.colors.ListedColormap(cmap_alpha)
 
 
-def pretty_label(label: str, prefix: str = 'd'):
+def pretty_label(label: str, prefix: str = 'd') -> str:
     """Make y-axis label prettier for scientific plotting
     In many cases, the observable is a distance or angle with the label
     being stored as X_Y (e.g. atoms X,Y)
@@ -127,7 +127,7 @@ def _log_axis(
         ax: mpl.axes,
         axis: str,
         subs: list = [2, 3, 4, 5, 6, 7, 8, 9],
-        linthresh: float = 0.01):
+        linthresh: float = 0.01) -> None:
     """Transform axis to logarithmic scale
 
     Parameters
@@ -145,7 +145,7 @@ def _log_axis(
         raise ValueError('Invalid axis! "axis" must be "x" or "y".')
 
 
-def save_fig(path: str):
+def save_fig(path: str) -> None:
     """Save generated plot in 'path' and print out 'path' for easier access"""
     pplt.hide_empty_axes()
     pplt.savefig(path, bbox_inches='tight')
@@ -153,7 +153,7 @@ def save_fig(path: str):
     plt.close()
 
 
-def _color_cycle():
+def _color_cycle() -> None:
     """Color cycle for red-green colorblind friendly plots."""
     default_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     default_colors[0] = '#005B8E'  # blue

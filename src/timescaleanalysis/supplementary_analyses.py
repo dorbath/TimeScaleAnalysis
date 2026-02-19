@@ -11,7 +11,7 @@ def fit_log_periodic_oscillations(
         log_time_trace: np.array,
         times: np.array,
         fit_range: list,
-        popt: tuple = None):
+        popt: tuple = None) -> tuple:
     """Fit the time trace with a power law (t^a0) and
     logarithmic oscillations with period tau_log.
     A system with hierarchical dynamics may yield equidistant timescales/peaks
@@ -49,7 +49,7 @@ def fit_log_periodic_oscillations(
             with their standard deviations from the covariance matrix
     """
 
-    def _fit_log_osc(x, a0, tau, sa, sb, sc, phi):
+    def _fit_log_osc(x, a0, tau, sa, sb, sc, phi) -> np.array:
         """Full fit function with power law and logarithmic oscillations"""
         return (sa
                 + sb*np.power(x, a0)
@@ -133,7 +133,7 @@ def get_population_heatmaps(
         preP: preprocessing,
         lowBound: float = 1e0,
         upBound: float = 1e3,
-        valueRange: list = None):
+        valueRange: list = None) -> tuple:
     """
     Get time-dependent populations for all observables.
     For each time bin (x-axis), a population distribution is derived
@@ -158,7 +158,7 @@ def get_population_heatmaps(
             time_bins: np.array,
             times_arr: np.array,
             value_arr: np.array,
-            ):
+            ) -> np.array:
         """Get observable values for a single time bin."""
         time_start, time_end = time_bins[t_bin], time_bins[t_bin + 1]
         time_indices = (
@@ -196,6 +196,10 @@ def get_population_heatmaps(
 
     time_bin_count = len(time_bins) - 1  # Number of time bins
     value_bin_count = len(value_bins) - 1  # Number of value bins
+
+    # For a single observable (2D array), adjust shape of data array
+    if np.ndim(preP.data_arr) == 2:
+        preP.data_arr = np.expand_dims(preP.data_arr, axis=2)
 
     heatmaps = []
     for i in range(np.shape(preP.data_arr)[2]):

@@ -136,10 +136,11 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # It may be advantageous to perform scipy.ndimage.gaussian_filter
     # onto the single heatmap prior to plotting.
     heatmaps = suppAna.get_population_heatmaps(
-        preP, lowBound=1e2, upBound=1e7, valueRange=[0.0, 4.5]
+        preP, lowBound=1e0, upBound=1e6, valueRange=[0.0, 4.5]
     )
     for i in range(len(heatmaps[2])):
         plotting.plot_2D_histogram(heatmaps[0], heatmaps[1], heatmaps[2][i])
+        plt.xlim(1e0, 1e6)
         plotting.save_fig(f'{output_path}/time_dependent_distribution_{i}.pdf')
     ###########################################################################
 
@@ -193,7 +194,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         # Provide single observable to TSA class
         tsa.options['temp_mean'] = temp_mean
         tsa.options['temp_sem'] = temp_sem
-        regPara = 10
+        regPara = 100
         lag_rates = tsa.perform_tsa(
             regPara=regPara,
             startTime=1e-1,
@@ -235,12 +236,15 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         io.save_npArray(
             fitParameters,
             output_path,
-            f'log_periodic_{idxObs}_FitParameters.txt',
+            f'log_periodic_FitParameters_{idxObs}.txt',
             comment=(
-                f'Fit parameters of log-periodic oscillation fit for observable {tsa.labels[idxObs]}:\n'
-                f'First line are the fit parameters, second line their standard error.\n'
+                f'Fit parameters of log-periodic oscillation fit '
+                f'for observable {tsa.labels[idxObs]}:\n'
+                f'First line are the fit parameters, '
+                f'second line their standard error.\n'
                 f'Columns: a0, tau, sa, sb, sc, phi\n'
-                f'Fit function: f(t) = sa + sb*t^a0 + sc*t^a0*cos(2pi/tau*log10(t)+phi)\n'
+                f'Fit function: f(t) = sa + sb*t^a0 + '
+                f'sc*t^a0*cos(2pi/tau*log10(t)+phi)\n'
                 f'Fit range: {fit_range[0]} to {fit_range[1]}.'
             )
         )
@@ -254,9 +258,9 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         output_path,
         'timescale_spectra',
         comment=(
-            f'Time scale spectra of all observables\n'
-            f'Columns:\n'
-            f'time '+''.join(tsa.labels)+'\n'
+            'Time scale spectra of all observables\n'
+            'Columns:\n'
+            'time '+''.join(tsa.labels)+'\n'
             f'Regularization parameter lambda={regPara}, '
             f'fit parameters={tsa.fit_n_decades*10+1}'
         )
@@ -291,8 +295,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         )
     )
     ###########################################################################
-
-    sys.exit()
 
     #ensemble_averaged_change = []
     ## Derive ensemble average change (for each column/distance in cluster)
