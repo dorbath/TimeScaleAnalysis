@@ -49,28 +49,8 @@ class Preprocessing:
 
     def generate_input_trajectories(self) -> None:
         """Get all files/trajectories in 'data_path' with the correct prefix.
-        All files that fulfill data_path* are taken as input.
+        All files that fulfill data_path* are taken as input files.
         """
-
-        # Isolate folder path and trajectory prefix
-        #data_path_split = self.data_dir.split("/")
-        #if len(data_path_split) == 1:
-        #    data_path_split = ['.', data_path_split[0]]
-
-        #folder_suffix = data_path_split[-1]
-        #for n in range(len(data_path_split)-1):
-        #    self.folder_prefix += data_path_split[n]+'/'
-        ## If prefix matches exactly with a file, take this file as input
-        ## Otherwise take all files with matching prefix
-        #if isfile(self.folder_prefix+'/'+folder_suffix):
-        #    self.input_directories = [
-        #        folder_suffix
-        #    ]
-        #else:
-        #    self.input_directories = [
-        #        path for path in os.listdir(self.folder_prefix)
-        #        if path.startswith(folder_suffix)
-        #    ]
         self.input_directories = glob.glob(self.data_dir+'*')
 
     def load_absorption_spectra(self) -> None:
@@ -98,6 +78,18 @@ class Preprocessing:
                 Trajectory must contain two columns, 1st with data points,
                 2nd with standard error of the mean (SEM). (default: False)
         """
+        def _derive_average_trajectory() -> None:
+            """"Average data for each column"""
+            # Correct number of simulations at each timestep
+            n_sim_not_nan = np.sum(~np.isnan(self.data_arr), axis=0)
+            self.data_mean = np.nanmean(
+                np.array(self.data_arr),
+                axis=0, dtype=np.float32
+            )
+            self.data_sem = np.nanstd(
+                np.array(self.data_arr),
+                axis=0, ddof=0, dtype=np.float32
+            )/np.sqrt(n_sim_not_nan)
 
         def _load_single_file(file_name: str,
                               precision=np.float32,
@@ -225,14 +217,14 @@ class Preprocessing:
             temp_lengths = {len(traj) for traj in self.data_arr}
             if len(temp_lengths) > 1:
                 self.reshape_same_length()
-            self.derive_average_trajectory()
+            _derive_average_trajectory()
         else:
             _load_multiple_trajectories()
             # Reshape all trajectories to same length if needed
             temp_lengths = {len(traj) for traj in self.data_arr}
             if len(temp_lengths) > 1:
                 self.reshape_same_length()
-            self.derive_average_trajectory()
+            _derive_average_trajectory()
 
     def reshape_same_length(self, insert_nan: bool = True) -> None:
         """Ensure that all trajectories are of same length
@@ -291,19 +283,6 @@ class Preprocessing:
                 self.n_steps,
                 insert_nan=insert_nan,
             )
-
-    def derive_average_trajectory(self) -> None:
-        """"Average data for each column"""
-        # Correct number of simulations at each timestep (relevant if reshaped)
-        n_sim_not_nan = np.sum(~np.isnan(self.data_arr), axis=0)
-        self.data_mean = np.nanmean(
-            np.array(self.data_arr),
-            axis=0, dtype=np.float32
-        )
-        self.data_sem = np.nanstd(
-            np.array(self.data_arr),
-            axis=0, ddof=0, dtype=np.float32
-        )/np.sqrt(n_sim_not_nan)
 
     def get_time_array(self) -> None:
         """Derive time array for the data"""

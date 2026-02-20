@@ -124,7 +124,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories()
+    preP.load_trajectories(averaged=True)
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
