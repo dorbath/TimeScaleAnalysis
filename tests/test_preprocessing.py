@@ -17,8 +17,8 @@ TEST_DATA = Path(__file__).parent / 'test_data'
 @pytest.mark.parametrize(
     'data_dir, result_directories', [
         (
-            'test_data/test_trajectories/test_1Observable_traj1.txt',
-            ['test_data/test_trajectories/test_1Observable_traj1.txt']
+            'test_data/test_trajectories/test_1ObservableTraj.txt',
+            ['test_data/test_trajectories/test_1ObservableTraj.txt']
         ),
         (
             'test_data/test_trajectories/test_3Observables_traj',
@@ -38,15 +38,16 @@ def test_generate_input_trajectories(
     preP.generate_input_trajectories()
     assert preP.input_directories == result_directories
 
+
 # Test function for preprocessing.load_trajectories
 @pytest.mark.parametrize(
     'input_directories, n_traj_conc, averaged, result_files, error', [
         (
-            [TEST_TRAJ/'test_1Observable_traj1.txt'],
+            [TEST_TRAJ/'test_1ObservableTraj.txt'],
             None,
             False,
-            [TEST_DATA/'test_data_mean/test_data_mean_1Observable_traj1.txt',
-             TEST_DATA/'test_data_sem/test_data_sem_1Observable_traj1.txt'],
+            [TEST_DATA/'test_data_mean/test_data_mean_1ObservableTraj.txt',
+             TEST_DATA/'test_data_sem/test_data_sem_1ObservableTraj.txt'],
             None
         ),
         (
@@ -76,11 +77,11 @@ def test_generate_input_trajectories(
             None
         ),
         (
-            [TEST_TRAJ/'test_1Observable_traj1.txt'],
+            [TEST_TRAJ/'test_1ObservableTraj.txt'],
             1,
             True,
-            [TEST_DATA/'test_data_mean/test_data_mean_1Observable_traj1.txt',
-             TEST_DATA/'test_data_sem/test_data_sem_1Observable_traj1.txt'],
+            [TEST_DATA/'test_data_mean/test_data_mean_1ObservableTraj.txt',
+             TEST_DATA/'test_data_sem/test_data_sem_1ObservableTraj.txt'],
             Exception
         ),
         (
@@ -110,3 +111,15 @@ def test_load_trajectories(
     else:
         with pytest.raises(error):
             preP.load_trajectories(n_traj_conc=n_traj_conc, averaged=averaged)
+
+
+def test_reshape_same_length():
+    pass
+
+
+def test_get_time_array():
+    pass
+
+
+def test_save_preprocessed_data():
+    pass

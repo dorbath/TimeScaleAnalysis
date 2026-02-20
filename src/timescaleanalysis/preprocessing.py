@@ -51,7 +51,7 @@ class Preprocessing:
         """Get all files/trajectories in 'data_path' with the correct prefix.
         All files that fulfill data_path* are taken as input files.
         """
-        self.input_directories = glob.glob(self.data_dir+'*')
+        self.input_directories = glob.glob(f'{self.data_dir}*')
 
     def load_absorption_spectra(self) -> None:
         """Load single absorption spectrum of experimental

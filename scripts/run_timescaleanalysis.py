@@ -92,7 +92,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             (supplementary_analyses.fit_log_periodic_oscillations())
         7) Derivation of dynamical content (utils.derive_dynamical_content())
 
-    For the recommended workflow, see README.md or see the files:
+    For the recommended workflow, see the files:
         - scripts/example_preprocessing.py
         - scripts/example_timescaleAnalysis.py
         - scripts/example_dynamicalContent.py
@@ -111,7 +111,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # Generate multi-exponential time traces with perfectly known
     # timescales, amplitudes.
     utils.generate_multi_exp_timetrace(
-        'scripts/example_json.json',
+        'scripts/example_json_1Observable.json',
         output_path='.',
         output_file='multi_exp_function_example.txt'
     )

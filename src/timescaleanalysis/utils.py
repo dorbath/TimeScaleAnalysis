@@ -5,6 +5,7 @@ import timescaleanalysis.plotting as plotting
 import timescaleanalysis.io as io
 import os
 import json
+import glob as glob
 from scipy.ndimage import gaussian_filter1d
 
 
@@ -42,24 +43,7 @@ def generate_input_trajectories(
     folder_prefix: str, path to folder with trajectories
     input_directories: list of str, list of files with trajectories
     """
-    # Isolate folder path and trajectory prefix
-    data_dir_split = file_dir.split("/")
-    folder_prefix = ''
-    folder_suffix = data_dir_split[-1]
-    for n in range(len(data_dir_split)-1):
-        folder_prefix += data_dir_split[n]+'/'
-    # If prefix matches exactly with a file, take this file as input
-    # Otherwise take all files with matching prefix
-    if isfile(folder_prefix+'/'+folder_suffix):
-        input_directories = [
-            folder_suffix
-        ]
-    else:
-        input_directories = [
-            path for path in os.listdir(folder_prefix)
-            if path.startswith(folder_suffix)
-        ]
-    return folder_prefix, input_directories
+    return glob.glob(f'{file_dir}*')
 
 
 def derive_dynamical_content(
@@ -250,7 +234,7 @@ def generate_multi_exp_timetrace(
         output_file,
         comment=(
             f"Multi-exponential function with noise\n"
-            f"Each row corresponds to a time step (n_steps={int(n_steps)}\n"
+            f"Each row corresponds to a time step (n_steps={int(n_steps)})\n"
             f"Columns: observables S_n(t) [nm]\n"
             f"Parameters of each observable: \n"
             f"{''.join(output_header)}")
