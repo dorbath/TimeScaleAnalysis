@@ -92,7 +92,11 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             (supplementary_analyses.fit_log_periodic_oscillations())
         7) Derivation of dynamical content (utils.derive_dynamical_content())
 
-    For the recommended workflow, see README.md or 'minimal_example.py'.
+    For the recommended workflow, see README.md or see the files:
+        - scripts/example_preprocessing.py
+        - scripts/example_timescaleAnalysis.py
+        - scripts/example_dynamicalContent.py
+    This sequence is seen as the best/most flexible/stable one.
 
     The results can be reproduced by calling in your consol:
     >>> ./scripts/run_timescaleanalysis.py
@@ -124,7 +128,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories(averaged=True)
+    preP.load_trajectories()
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
@@ -269,7 +273,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     ###########################################################################
     # Once the analysis is performed, all spectra can be directly reloaded
     # and the dynamical content can be derived
-    loaded_spectrum = io.load_npArray(output_path, 'timescale_spectra')
+    loaded_spectrum = io.load_npArray(f'{output_path}/timescale_spectra')
     temp_tau_k, temp_dyn_cont = utils.derive_dynamical_content(loaded_spectrum)
     ###########################################################################
 

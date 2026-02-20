@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-"""Fundamental script to perform a timescale analysis.
-All required steps are outlined, including:
-data generation, preprocess, timescale analysis, plotting and
-saving of results.
-
-In several intermediate steps, the user can adjust parameters
-as they please, e.g. the used labels for plots, time steps etc.
+"""
+This script presents a minimal set of required steps going from
+multiple trajectory files with several observables to the
+final timescale analysis for each of them.
 """
 
 __author__ = "Emanuel Dorbath"
@@ -75,13 +72,6 @@ plotting._color_cycle()
     help='Path to output files',
 )
 def main(data_path, sim_file, label_file, fit_n_decades, output_path):
-    """
-    This script presents a minimal set of required steps going from
-    multiple trajectory files with several observables to the
-    final timescale analysis for each of them.
-    """
-    ###########################################################################
-    # Perform preprocessing
     preP = Preprocessing(
         data_path,
         sim_file=sim_file,
@@ -91,11 +81,9 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     preP.load_trajectories()
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
-    ###########################################################################
 
     tsa = TimeScaleAnalysis(preP.data_dir, fit_n_decades)
     tsa.load_data()
-
     # Interpolate additional data points as mean values
     tsa.interpolate_data_points(iterations=2)
     # Transform linear frames into logarithmic ones
@@ -103,8 +91,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # Append additional frames for a better convergence of the fit
     tsa.extend_timeTrace()
 
-    ###########################################################################
-    # Perform timescale analysis for each observable and plot the results.
     store_spectrum = []  # list that is filled which the amplitudes
     for idxObs in range(tsa.data_mean.shape[1]):
         temp_mean = utils.gaussian_smooth(tsa.data_mean[:, idxObs], 6)
@@ -135,10 +121,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
 
         store_time = tsa.spectrum[:, 0]
         store_spectrum.append(tsa.spectrum[:, 1])
-    ###########################################################################
 
-    # Store timescale spectra of each observable for post-analyses
-    # This is especially useful if multiple dynamical contents are compared
     io.save_npArray(
         np.column_stack([store_time] + store_spectrum),
         output_path,

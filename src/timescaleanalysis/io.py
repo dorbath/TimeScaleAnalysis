@@ -24,25 +24,23 @@ def save_npArray(
     print(f'Saved: {file_path}')
 
 
-def load_npArray(folder_path: str, file_name: str) -> np.array:
-    """Load a np.array from 'file_path/file_name'
+def load_npArray(file_name: str) -> np.array:
+    """Load a np.array from 'file_name'
 
     Parameters
     ----------
-    folder_path: str, path to folder in which file is stored
-    file_name: str, name of file
+    file_name: str, path and name of file
 
     Return
     ------
     loaded array as np.array
     """
-    file_path = os.path.join(folder_path, f'{file_name}')
-    if not isfile(file_path):
+    if not isfile(file_name):
         raise FileNotFoundError(
-            f"File {file_path} does not exist. Check path and file name")
+            f"File {file_name} does not exist. Check path and file name")
     else:
-        load_array = np.loadtxt(file_path)
-        print(f'Loaded: {file_path}')
+        load_array = np.loadtxt(file_name)
+        print(f'Loaded: {file_name}')
         return load_array
 
 
