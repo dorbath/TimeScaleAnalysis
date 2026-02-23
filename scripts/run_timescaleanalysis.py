@@ -46,22 +46,6 @@ plotting._color_cycle()
     help='Path to trajectory files with optional prefix of trajectory fiels',
 )
 @click.option(
-    '--sim-file',
-    '-simF',
-    'sim_file',
-    type=click.STRING,
-    default=None,
-    help='mdp file used to simulate the trajectories',
-)
-@click.option(
-    '--label-file',
-    '-label',
-    'label_file',
-    type=click.STRING,
-    default=None,
-    help='mdp file used to simulate the trajectories',
-)
-@click.option(
     '--number-decades',
     '-nD',
     'fit_n_decades',
@@ -76,6 +60,22 @@ plotting._color_cycle()
     required=True,
     type=click.Path(),
     help='Path to output files',
+)
+@click.option(
+    '--sim-file',
+    '-simF',
+    'sim_file',
+    type=click.STRING,
+    default=None,
+    help='mdp file used to simulate the trajectories',
+)
+@click.option(
+    '--label-file',
+    '-label',
+    'label_file',
+    type=click.STRING,
+    default=None,
+    help='file that maps labels to each observable',
 )
 def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     """
@@ -132,6 +132,11 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
+    io.save_npArray(
+        preP.options['times'],
+        output_path,
+        'times',
+    )
 
     ###########################################################################
     # Plot heatmaps of each observable.

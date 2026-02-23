@@ -113,12 +113,86 @@ def test_load_trajectories(
             preP.load_trajectories(n_traj_conc=n_traj_conc, averaged=averaged)
 
 
-def test_reshape_same_length():
-    pass
+# Test function for preprocessing.reshape_same_length
+@pytest.mark.parametrize(
+    'input_data_arr, n_steps, result_shape, error', [
+        (
+            [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt'],
+            int(1e4),
+            (1, 1e4),
+            None
+        ),
+        (
+            [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt',
+             TEST_DATA/'test_data_arr/'
+             'test_data_arr_1Observable_short_10thFrame.txt'],
+            int(1e4),
+            (2, 1e4),
+            None
+        ),
+        (
+            [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt'],
+            int(500),
+            None,
+            ValueError
+        ),
+    ]
+)
+def test_reshape_same_length(
+        input_data_arr,
+        n_steps,
+        result_shape,
+        error):
+    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP.data_arr = [
+        np.loadtxt(data, dtype=np.float16)
+        for data in input_data_arr
+    ]
+    preP.n_steps = n_steps
+    if not error:
+        preP.reshape_same_length()
+        np.testing.assert_equal(np.shape(preP.data_arr), result_shape)
+    else:
+        with pytest.raises(error):
+            preP.reshape_same_length()
 
 
-def test_get_time_array():
-    pass
+# Test function for preprocessing.get_time_array
+@pytest.mark.parametrize(
+    'sim_file, result, error', [
+        (
+            TEST_DATA/'test_time_array/test_sim_file.md',
+            TEST_DATA/'test_time_array/test_time_array_sim_file.txt',
+            None
+        ),
+        (
+            None,
+            TEST_DATA/'test_time_array/test_time_array_no_sim_file.txt',
+            None
+        ),
+        (
+            TEST_DATA/'test_time_array/non_existing_file.md',
+            None,
+            FileNotFoundError
+        ),
+    ]
+)
+def test_get_time_array(
+        sim_file,
+        result,
+        error):
+    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP.options['sim_file'] = sim_file
+    preP.n_steps = int(1e4)
+    if not error:
+        preP.get_time_array()
+        expected_time_array = np.loadtxt(result)
+        np.testing.assert_allclose(
+            preP.options['times'], expected_time_array
+        )
+    else:
+        with pytest.raises(error):
+            preP.get_time_array()
 
 
 def test_save_preprocessed_data():

@@ -266,6 +266,12 @@ class Preprocessing:
                     "Input data must be 1D or 2D. "
                     f"Loaded data has {temp_np_traj.ndim} dimensions!"
                 )
+            if n_steps < temp_np_traj.shape[0]:
+                raise ValueError(
+                    "n_steps must be greater/equal than the trajectory length!"
+                    f" n_steps: {n_steps}, "
+                    f"trajectory length: {temp_np_traj.shape[0]}"
+                )
             T, n_cols = temp_np_traj.shape
             reshape_traj = np.zeros((n_steps, n_cols), dtype=np.float32)
             reshape_traj[:T] = temp_np_traj
@@ -304,7 +310,6 @@ class Preprocessing:
             self.options['times'] = np.arange(
                 0, self.n_steps, 1, dtype=np.float64
             )*dt
-
         if self.options['sim_file'] is not None:
             if not isfile(self.options['sim_file']):
                 raise FileNotFoundError(
