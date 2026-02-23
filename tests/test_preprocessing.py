@@ -2,9 +2,12 @@
 
 """
 
+from multiprocessing import Value
 import numpy as np
 import pytest
 from pathlib import Path
+from genericpath import isfile
+import json as json
 
 import timescaleanalysis
 import timescaleanalysis.preprocessing
@@ -152,6 +155,7 @@ def test_reshape_same_length(
     if not error:
         preP.reshape_same_length()
         np.testing.assert_equal(np.shape(preP.data_arr), result_shape)
+        assert np.asarray(preP.data_arr).ndim == 2
     else:
         with pytest.raises(error):
             preP.reshape_same_length()
@@ -195,5 +199,65 @@ def test_get_time_array(
             preP.get_time_array()
 
 
-def test_save_preprocessed_data():
-    pass
+@pytest.mark.parametrize(
+    'labels, output_path, result, error', [
+        (
+            TEST_DATA/'test_save_data/test_labels.txt',
+            TEST_DATA/'test_output_files/',
+            TEST_DATA/'test_save_data/test_result.json',
+            None
+        ),
+        (
+            None,
+            TEST_DATA/'test_output_files/',
+            TEST_DATA/'test_save_data/test_result_default_labels.json',
+            None
+        ),
+        (
+            TEST_DATA/'test_save_data/test_wrong_labels.txt',
+            TEST_DATA/'test_output_files/',
+            None,
+            ValueError
+        )
+    ]
+)
+def test_save_preprocessed_data(
+        labels,
+        output_path,
+        result,
+        error):
+    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP.data_mean = np.loadtxt(
+        TEST_DATA/'test_save_data/test_data_mean.txt'
+    )
+    preP.data_sem = np.loadtxt(
+        TEST_DATA/'test_save_data/test_data_sem.txt'
+    )
+    preP.options['times'] = np.loadtxt(
+        TEST_DATA/'test_save_data/test_time_array.txt'
+    )
+    preP.options['label_file'] = labels
+    if not error:
+        preP.save_preprocessed_data(output_path=str(output_path))
+        assert isfile(preP.data_dir)
+        with open(result, 'r') as f:
+            output_data = json.load(f)
+        np.testing.assert_allclose(
+            output_data['data_mean'], preP.data_mean.tolist()
+        )
+        np.testing.assert_allclose(
+            output_data['data_sem'], preP.data_sem.tolist()
+        )
+        np.testing.assert_allclose(
+            output_data['times'], preP.options['times'].tolist()
+        )
+        np.testing.assert_equal(
+            output_data['labels'], preP.labels_lst
+        )
+    else:
+        with pytest.raises(error):
+            preP.save_preprocessed_data(output_path=str(output_path))
+
+# give output path
+# test mismatch/missing labels
+# check that output file exists and contains expected data

@@ -132,11 +132,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
-    io.save_npArray(
-        preP.options['times'],
-        output_path,
-        'times',
-    )
 
     ###########################################################################
     # Plot heatmaps of each observable.
