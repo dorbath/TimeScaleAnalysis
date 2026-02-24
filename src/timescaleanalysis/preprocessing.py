@@ -57,10 +57,13 @@ class Preprocessing:
     def load_absorption_spectra(self) -> None:
         """Load single absorption spectrum of experimental
         data and corresponding times and frequencies"""
-        # Very specific file structure
         # First line: column names (e.g. frequencies)
         # First column: time points
         # All other columns: experimental observable (e.g. absorption)
+        if not isfile(self.input_directories[0]):
+            raise FileNotFoundError(
+                f"File {self.input_directories[0]} does not exist!"
+            )
         temp_data = np.loadtxt(
             self.input_directories[0],
             dtype=np.float32,

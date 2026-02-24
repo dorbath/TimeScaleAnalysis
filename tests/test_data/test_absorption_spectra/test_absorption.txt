@@ -1,0 +1,25 @@
+# Multi-exponential function with noise
+# Each row corresponds to a time step (n_steps=20)
+# Columns: observables S_n(t) [nm]
+#
+0 1 2 3
+1.0e0 0.0e0 0.0e0 0.0e0
+1.5e0 0.1e0 0.0e0 0.1e0
+2.0e0 0.2e0 0.1e0 0.2e0
+4.0e0 0.5e0 0.1e0 0.5e0
+7.0e0 0.7e0 0.1e0 0.9e0
+1.0e1 1.3e0 0.1e0 1.0e0
+1.5e1 1.3e0 0.1e0 1.1e0
+2.0e1 1.3e0 0.2e0 1.2e0
+4.0e1 1.4e0 0.3e0 1.5e0
+7.0e1 1.4e0 0.6e0 1.7e0
+1.0e2 1.5e0 0.9e0 1.9e0
+1.5e2 1.7e0 1.0e0 1.9e0
+2.0e2 1.9e0 1.1e0 1.9e0
+4.0e2 2.0e0 1.1e0 2.0e0
+7.0e2 2.0e0 1.2e0 2.1e0
+1.0e3 2.1e0 1.2e0 2.3e0
+1.5e3 2.1e0 1.6e0 2.5e0
+2.0e3 2.1e0 1.8e0 2.8e0
+4.0e3 2.1e0 1.9e0 3.1e0
+7.0e3 2.1e0 1.9e0 3.1e0

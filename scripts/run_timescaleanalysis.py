@@ -111,7 +111,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # Generate multi-exponential time traces with perfectly known
     # timescales, amplitudes.
     utils.generate_multi_exp_timetrace(
-        'scripts/example_json_1Observable.json',
+        'scripts/example_json_Absorption.json',
         output_path='.',
         output_file='multi_exp_function_example.txt'
     )
@@ -165,7 +165,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # Alternatively, directly put data_path into the TSA class
     tsa = TimeScaleAnalysis(preP.data_dir, fit_n_decades)
     tsa.load_data()
-    tsa.times = tsa.times*1e9
 
     # Derive dynamical content for all observables on the fly
     dynamic_content_arr = np.zeros(
@@ -205,7 +204,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         regPara = 300
         lag_rates = tsa.perform_tsa(
             regPara=regPara,
-            startTime=1e-2,
+            startTime=1e-1,
             posVal=False
         )
         ax1, ax2 = plotting.plot_TSA(

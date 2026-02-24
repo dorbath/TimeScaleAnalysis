@@ -116,8 +116,34 @@ def test_load_trajectories(
 
 
 # Test function for preprocessing.load_absorption_spectra
-def test_load_absorption_spectra():
-    pass
+@pytest.mark.parametrize(
+        'input_directories, result', [
+            (
+                [TEST_DATA/'test_absorption_spectra/test_absorption.txt'],
+                TEST_DATA/'test_absorption_spectra/test_json_absorption.json'
+            )
+        ]
+)
+def test_load_absorption_spectra(
+        input_directories,
+        result):
+    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP.input_directories = input_directories
+    preP.load_absorption_spectra()
+    with open(result, 'r') as f:
+        expected_result = json.load(f)
+        np.testing.assert_allclose(
+            preP.data_mean, expected_result['data_mean']
+        )
+        np.testing.assert_allclose(
+            preP.data_sem, expected_result['data_sem']
+        )
+        np.testing.assert_allclose(
+            preP.options['times'], expected_result['times']
+        )
+        np.testing.assert_equal(
+            preP.labels_lst, expected_result['labels']
+        )
 
 
 # Test function for preprocessing.reshape_same_length
