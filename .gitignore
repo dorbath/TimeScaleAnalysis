@@ -28,6 +28,7 @@ dist/
 
 # Folders
 temp_test_files/
+tests/test_data/test_output_files/
 
 # Files
 ./multi_exp_function_example.pdf
