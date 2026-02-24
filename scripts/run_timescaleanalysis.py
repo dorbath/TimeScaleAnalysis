@@ -98,7 +98,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         - scripts/example_dynamicalContent.py
     This sequence is seen as the best/most flexible/stable one.
 
-    The results can be reproduced by calling in your consol:
+    The results can be reproduced by calling in your console:
     >>> ./scripts/run_timescaleanalysis.py
     ...     -dpp /scripts/example_multiExp_3Observables_traj
     ...     -nD 7
