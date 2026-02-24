@@ -128,9 +128,8 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    #preP.load_trajectories()
-    #preP.get_time_array()
-    preP.load_absorption_spectra()
+    preP.load_trajectories()
+    preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
 
@@ -172,20 +171,18 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         dtype=np.float64).reshape((2, (tsa.fit_n_decades*10+1))).T
 
     # Interpolate additional data points as mean values
-    #tsa.interpolate_data_points(iterations=2)
+    tsa.interpolate_data_points(iterations=2)
     # Transform linear frames into logarithmic ones
-    #tsa.log_space_data(5000)
+    tsa.log_space_data(5000)
     # Append additional frames for a better convergence of the fit
-    #tsa.extend_timeTrace()
+    tsa.extend_timeTrace()
 
     ###########################################################################
     # Perform timescale analysis for each observable and plot the results.
     store_spectrum = []  # list that is filled which the amplitudes
     for idxObs in range(tsa.data_mean.shape[1]):
-        #temp_mean = utils.gaussian_smooth(tsa.data_mean[:, idxObs], 6)
-        #temp_sem = utils.gaussian_smooth(tsa.data_sem[:, idxObs], 6)
-        temp_mean = tsa.data_mean[:, idxObs]/utils.absmax(tsa.data_mean)
-        temp_sem = tsa.data_sem[:, idxObs]
+        temp_mean = utils.gaussian_smooth(tsa.data_mean[:, idxObs], 6)
+        temp_sem = utils.gaussian_smooth(tsa.data_sem[:, idxObs], 6)
         temp_label = tsa.labels[idxObs]
         # It can be helpful to rescale the data to be more sensitive
         # This is especially the case for small distances and angles
@@ -201,7 +198,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         # Provide single observable to TSA class
         tsa.options['temp_mean'] = temp_mean
         tsa.options['temp_sem'] = temp_sem
-        regPara = 300
+        regPara = 100
         lag_rates = tsa.perform_tsa(
             regPara=regPara,
             startTime=1e-1,
@@ -287,8 +284,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # be easily plotted into the same figure with the ax=ax1 parameter.
     ax1 = plotting.plot_dynamical_content(temp_tau_k, temp_dyn_cont)
     ax1.set_xlim(1e-1, 1e5)
-    #ax1.set_ylim(0, ax1.get_ylim()[1])
-    ax1.set_ylim(0, 0.3)
+    ax1.set_ylim(0, ax1.get_ylim()[1])
     plotting.save_fig(f'{output_path}/dynamical_content.pdf')
 
     io.save_npArray(

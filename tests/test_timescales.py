@@ -63,8 +63,48 @@ def test_load_data(
 
 
 # Test function for timescales.interpolate_data_points
-def test_interpolate_data_points():
-    pass
+@pytest.mark.parametrize(
+    'array, iterations, result, error', [
+        (
+            np.array([0., 1., 2., 3.]),
+            1,
+            np.array([0., 0.5, 1., 1.5, 2., 2.5, 3.]),
+            None
+        ),
+        (
+            np.array([0., 1., 2., 3.]),
+            2,
+            np.array([0., 0.25, 0.5, 0.75, 1.,
+                      1.25, 1.5, 1.75, 2., 2.25, 2.5, 2.75, 3.]),
+            None
+        ),
+        (
+            np.array([
+                [[0., 1., 2., 3.], [0., 1., 2., 3.]],
+                [[0., 1., 2., 3.], [0., 1., 2., 3.]]
+                ]),
+            1,
+            None,
+            ValueError
+        ),
+    ]
+)
+def test_interpolate_data_points(
+        array,
+        iterations,
+        result,
+        error):
+    tsa = timescaleanalysis.timescales.TimeScaleAnalysis(TEST_TRAJ, 1)
+    if not error:
+        tsa.data_mean = array
+        tsa.data_sem = array
+        tsa.times = array
+        tsa.n_steps = len(tsa.times)
+        tsa.interpolate_data_points(iterations)
+        np.testing.assert_allclose(tsa.data_mean, result)
+    else:
+        with pytest.raises(error):
+            tsa.interpolate_data_points(iterations)
 
 
 # Test function for timescales.log_space_data
