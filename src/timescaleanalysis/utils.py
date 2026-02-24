@@ -73,7 +73,7 @@ def derive_dynamical_content(
         )
     tau_k = spectrum[1:, 0]
     dynamic_content = np.sum(spectrum[1:, 1:]**2, axis=1)
-    return tau_k, dynamic_content
+    return tau_k, np.sqrt(dynamic_content)
 
 
 def absmax(

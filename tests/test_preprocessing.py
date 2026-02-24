@@ -115,8 +115,10 @@ def test_load_trajectories(
             preP.load_trajectories(n_traj_conc=n_traj_conc, averaged=averaged)
 
 
+# Test function for preprocessing.load_absorption_spectra
 def test_load_absorption_spectra():
     pass
+
 
 # Test function for preprocessing.reshape_same_length
 @pytest.mark.parametrize(
