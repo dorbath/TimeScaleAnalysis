@@ -5,6 +5,7 @@ import numpy as np
 import os
 import timescaleanalysis.io as io
 import glob as glob
+import timescaleanalysis.utils as utils
 
 
 class Preprocessing:
@@ -56,7 +57,23 @@ class Preprocessing:
     def load_absorption_spectra(self) -> None:
         """Load single absorption spectrum of experimental
         data and corresponding times and frequencies"""
-        # TODO Add here the 1D (Exp data) part
+        # Very specific file structure
+        # First line: column names (e.g. frequencies)
+        # First column: time points
+        # All other columns: experimental observable (e.g. absorption)
+        temp_data = np.loadtxt(
+            self.input_directories[0],
+            dtype=np.float32,
+            comments='#',
+        )
+        self.options['times'] = temp_data[1:, 0]
+        self.data_mean = temp_data[1:, 1:]
+        self.labels_lst = temp_data[0, 1:].astype(int)
+        self.data_sem = np.full_like(
+            self.data_mean, 0.01*np.std(
+                self.data_mean/utils.absmax(self.data_mean)
+            )
+        )
 
     def load_trajectories(self,
                           n_traj_conc: int = None,
@@ -395,18 +412,19 @@ class Preprocessing:
                     f"Number of labels: {len(labels_lst)}, "
                     f"Number of observables: {n_observables}"
                 )
-        else:
+            self.labels_lst = labels_lst
+        elif self.labels_lst is None:
             labels_lst = np.array(
                 [f'x{i+1}' for i in range(self.data_mean.shape[1])],
                 dtype=str
             )
-        self.labels_lst = labels_lst
+            self.labels_lst = labels_lst
 
         # Save data in json file
         output_dic = {
             'data_mean': self.data_mean.tolist(),
             'data_sem': self.data_sem.tolist(),
             'times': self.options['times'].tolist(),
-            'labels': labels_lst.tolist()
+            'labels': self.labels_lst.tolist()
         }
         self.data_dir = io.save_json(output_dic, output_path)

@@ -76,6 +76,23 @@ def derive_dynamical_content(
     return tau_k, dynamic_content
 
 
+def absmax(
+        data: np.array,
+        axis: int = None) -> np.array:
+    """Derive the maximum of the absolute values in 'data' along 'axis'
+
+    Parameters
+    ----------
+    data: np.array, input data
+    axis: int, axis along which to compute the maximum (default: None)
+
+    Return
+    ------
+    absmax_data: np.array, maximum of the absolute values along 'axis'
+    """
+    return np.amax(np.abs(data), axis=axis)
+
+
 def calculate_ensemble_average_change(data, abs_val=True):
     """Derive the ensemble average change of a given set of distances (e.g. a cluster)
 

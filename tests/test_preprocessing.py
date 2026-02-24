@@ -2,7 +2,6 @@
 
 """
 
-from multiprocessing import Value
 import numpy as np
 import pytest
 from pathlib import Path
@@ -116,6 +115,9 @@ def test_load_trajectories(
             preP.load_trajectories(n_traj_conc=n_traj_conc, averaged=averaged)
 
 
+def test_load_absorption_spectra():
+    pass
+
 # Test function for preprocessing.reshape_same_length
 @pytest.mark.parametrize(
     'input_data_arr, n_steps, result_shape, error', [
@@ -199,6 +201,7 @@ def test_get_time_array(
             preP.get_time_array()
 
 
+# Test function for preprocessing.save_preprocessed_data
 @pytest.mark.parametrize(
     'labels, output_path, result, error', [
         (
@@ -243,21 +246,17 @@ def test_save_preprocessed_data(
         with open(result, 'r') as f:
             output_data = json.load(f)
         np.testing.assert_allclose(
-            output_data['data_mean'], preP.data_mean.tolist()
+            preP.data_mean.tolist(), output_data['data_mean']
         )
         np.testing.assert_allclose(
-            output_data['data_sem'], preP.data_sem.tolist()
+            preP.data_sem.tolist(), output_data['data_sem']
         )
         np.testing.assert_allclose(
-            output_data['times'], preP.options['times'].tolist()
+            preP.options['times'].tolist(), output_data['times']
         )
         np.testing.assert_equal(
-            output_data['labels'], preP.labels_lst
+            preP.labels_lst, output_data['labels']
         )
     else:
         with pytest.raises(error):
             preP.save_preprocessed_data(output_path=str(output_path))
-
-# give output path
-# test mismatch/missing labels
-# check that output file exists and contains expected data

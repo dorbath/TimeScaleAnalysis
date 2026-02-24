@@ -188,10 +188,6 @@ class TimeScaleAnalysis:
                  data_file: str,
                  fit_n_decades: int,
                  **kwargs):
-        if not isfile(data_file):
-            raise FileNotFoundError(
-                f"Expected data_file does not exist! Got {data_file}"
-            )
         if not isinstance(fit_n_decades, int):
             warnings.warn(
                 f"Expected 'fit_n_decades' to be type int, but got "
@@ -213,6 +209,10 @@ class TimeScaleAnalysis:
 
     def load_data(self) -> None:
         """Load preprocessed data with the correct shape"""
+        if not isfile(self.data_file):
+            raise FileNotFoundError(
+                f"Provided data_file {self.data_file} does not exist!"
+            )
         with open(self.data_file) as f:
             data_json = json.load(f)
         for key in ['data_mean', 'data_sem', 'times', 'labels']:
