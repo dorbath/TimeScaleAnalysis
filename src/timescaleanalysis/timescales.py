@@ -304,8 +304,12 @@ class TimeScaleAnalysis:
         # Prevent errors for last index
         if log_spaced_index_mask[-1] == self.n_steps:
             log_spaced_index_mask[-1] = log_spaced_index_mask[-1] - 1
-        # Add first frame to log-spacing
-        log_spaced_index_mask = np.insert(log_spaced_index_mask, 0, 0)
+        print(log_spaced_index_mask)
+        # Add first frame to log-spacing and eliminate any duplicates
+        log_spaced_index_mask = np.unique(
+            np.insert(log_spaced_index_mask, 0, 0)
+        )
+        print(log_spaced_index_mask)
         self.data_mean = self.data_mean[log_spaced_index_mask]
         self.data_sem = self.data_sem[log_spaced_index_mask]
         self.times = self.times[log_spaced_index_mask]

@@ -2,6 +2,7 @@
 
 """
 
+from tracemalloc import take_snapshot
 import numpy as np
 import pytest
 from pathlib import Path
@@ -66,9 +67,10 @@ def test_load_data(
 @pytest.mark.parametrize(
     'array, iterations, result, error', [
         (
-            np.array([0., 1., 2., 3.]),
+            np.array([[0., 1.], [2., 3.], [4., 5.], [6., 7.]]),
             1,
-            np.array([0., 0.5, 1., 1.5, 2., 2.5, 3.]),
+            np.array([[0., 1.], [1., 2.], [2., 3.], [3., 4.],
+                      [4., 5.], [5., 6.], [6., 7.]]),
             None
         ),
         (
@@ -108,8 +110,32 @@ def test_interpolate_data_points(
 
 
 # Test function for timescales.log_space_data
-def test_log_space_data():
-    pass
+@pytest.mark.parametrize(
+        'lin_shape, log_result', [
+            (
+                (10000, 1),
+                (2125, 1)
+            ),
+            (
+                (10000, 10),
+                (2125, 10)
+            ),
+            (
+                (100, 1),
+                (100, 1)
+            )
+        ]
+)
+def test_log_space_data(
+        lin_shape,
+        log_result):
+    tsa = timescaleanalysis.timescales.TimeScaleAnalysis(TEST_TRAJ, 1)
+    tsa.data_mean = np.zeros(lin_shape)
+    tsa.data_sem = np.zeros(lin_shape)
+    tsa.times = np.arange(lin_shape[0])
+    tsa.n_steps = lin_shape[0]
+    tsa.log_space_data(target_n_steps=5000)
+    assert tsa.data_mean.shape == log_result
 
 
 # Test function for timescales.extend_timeTrace
