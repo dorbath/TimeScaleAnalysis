@@ -129,9 +129,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     )
     preP.generate_input_trajectories()
     preP.load_trajectories()
-    preP.data_mean = np.arange(1e4)
-    preP.data_sem = np.full_like(preP.data_mean, 100)
-    preP.n_steps = preP.data_mean.shape[0]
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
@@ -174,11 +171,9 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         dtype=np.float64).reshape((2, (tsa.fit_n_decades*10+1))).T
 
     # Interpolate additional data points as mean values
-    #tsa.interpolate_data_points(iterations=2)
+    tsa.interpolate_data_points(iterations=2)
     # Transform linear frames into logarithmic ones
-    print(tsa.data_mean, tsa.data_mean.shape)
     tsa.log_space_data(5000)
-    print(tsa.data_mean, tsa.data_mean.shape)
     # Append additional frames for a better convergence of the fit
     tsa.extend_timeTrace()
 
