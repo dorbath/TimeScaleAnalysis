@@ -322,16 +322,6 @@ class TimeScaleAnalysis:
         data_mean = np.asarray(self.data_mean)
         data_sem = np.asarray(self.data_sem)
 
-        # TODO: This may be not necesseray anymore
-        # as all (N,) arrays are converted to (N,1) in preprocessing
-        # Decraptate this part after catching in load_data() any (N,1) array
-        squeeze_arr = False
-        # (N,) arrays must be adjusted for generalization
-        if data_mean.ndim == 1:
-            data_mean = data_mean[:, None]
-            data_sem = data_sem[:, None]
-            squeeze_arr = True
-
         N, _ = data_mean.shape
 
         # Get number of frames to append and frame index from which
@@ -357,11 +347,6 @@ class TimeScaleAnalysis:
         times = np.concatenate(
             [times, times[-n_frames_perOrder:] * 10]
         )
-
-        # restore original dimensionality
-        if squeeze_arr:
-            data_mean = data_mean[:, 0]
-            data_sem = data_sem[:, 0]
 
         self.data_mean = data_mean
         self.data_sem = data_sem

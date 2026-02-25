@@ -139,8 +139,27 @@ def test_log_space_data(
 
 
 # Test function for timescales.extend_timeTrace
-def test_extend_timeTrace():
-    pass
+@pytest.mark.parametrize(
+        'initial_shape, extended_result', [
+            (
+                (10000, 3),
+                (19000, 3)
+            ),
+            (
+                (100, 1),
+                (190, 1)
+            )
+        ]
+)
+def test_extend_timeTrace(
+        initial_shape,
+        extended_result):
+    tsa = timescaleanalysis.timescales.TimeScaleAnalysis(TEST_TRAJ, 1)
+    tsa.data_mean = np.zeros(initial_shape)
+    tsa.data_sem = np.zeros(initial_shape)
+    tsa.times = np.arange(initial_shape[0])
+    tsa.extend_timeTrace()
+    assert tsa.data_mean.shape == extended_result
 
 
 # Test function for timescales.perform_tsa
