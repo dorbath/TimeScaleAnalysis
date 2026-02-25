@@ -264,7 +264,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         comment=(
             'Time scale spectra of all observables\n'
             'Columns:\n'
-            'time '+''.join(tsa.labels)+'\n'
+            'time '+' '.join(tsa.labels)+'\n'
             f'Regularization parameter lambda={regPara}, '
             f'fit parameters={tsa.fit_n_decades*10+1}'
         )

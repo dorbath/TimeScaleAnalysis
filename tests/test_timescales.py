@@ -111,20 +111,20 @@ def test_interpolate_data_points(
 
 # Test function for timescales.log_space_data
 @pytest.mark.parametrize(
-        'lin_shape, log_result', [
-            (
-                (10000, 1),
-                (2125, 1)
-            ),
-            (
-                (10000, 10),
-                (2125, 10)
-            ),
-            (
-                (100, 1),
-                (100, 1)
-            )
-        ]
+    'lin_shape, log_result', [
+        (
+            (10000, 1),
+            (2125, 1)
+        ),
+        (
+            (10000, 10),
+            (2125, 10)
+        ),
+        (
+            (100, 1),
+            (100, 1)
+        )
+    ]
 )
 def test_log_space_data(
         lin_shape,
@@ -140,16 +140,16 @@ def test_log_space_data(
 
 # Test function for timescales.extend_timeTrace
 @pytest.mark.parametrize(
-        'initial_shape, extended_result', [
-            (
-                (10000, 3),
-                (19000, 3)
-            ),
-            (
-                (100, 1),
-                (190, 1)
-            )
-        ]
+    'initial_shape, extended_result', [
+        (
+            (10000, 3),
+            (19000, 3)
+        ),
+        (
+            (100, 1),
+            (190, 1)
+        )
+    ]
 )
 def test_extend_timeTrace(
         initial_shape,
@@ -163,5 +163,32 @@ def test_extend_timeTrace(
 
 
 # Test function for timescales.perform_tsa
-def test_perform_tsa():
-    pass
+@pytest.mark.parametrize(
+    'input_json, result_spectrum', [
+        (
+            TEST_DATA/'test_tsa_spectrum/test_input_3Observables_Obs1.json',
+            TEST_DATA/'test_tsa_spectrum/test_spectra_3Observables_Obs1.txt'
+        )
+    ]
+)
+def test_perform_tsa(
+        input_json,
+        result_spectrum):
+    tsa = timescaleanalysis.timescales.TimeScaleAnalysis(TEST_TRAJ, 1)
+    with open(input_json, 'r') as f:
+        input_dict = json.load(f)
+    tsa.options['temp_mean'] = np.array(input_dict['data_mean'])
+    tsa.options['temp_sem'] = np.array(input_dict['data_sem'])
+    tsa.times = np.array(input_dict['times'])
+    tsa.n_steps = len(tsa.times)
+    tsa.fit_n_decades = input_dict['fit_n_decades']
+    regPara = input_dict['regPara']
+
+    tsa.perform_tsa(
+        regPara=regPara,
+        startTime=1e-1,
+        posVal=input_dict['posVal'])
+    np.testing.assert_allclose(
+        tsa.spectrum, np.loadtxt(result_spectrum),
+        rtol=3e-2,
+    )

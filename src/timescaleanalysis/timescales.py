@@ -413,7 +413,7 @@ class TimeScaleAnalysis:
             return regPara, exp_P_Bayes/np.amax(exp_P_Bayes)
         else:
             raise TypeError(
-                f'Expected regPara to be float or np.ndarray/list, '
+                f'Expected regPara to be float/int or np.ndarray/list, '
                 f'but got {type(regPara)}'
             )
         self.spectrum = np.zeros((2, nR), dtype=np.float32).T
