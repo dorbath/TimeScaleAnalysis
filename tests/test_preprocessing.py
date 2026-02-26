@@ -19,17 +19,17 @@ TEST_DATA = Path(__file__).parent / 'test_data'
 @pytest.mark.parametrize(
     'data_dir, result_directories', [
         (
-            'test_data/test_trajectories/test_1ObservableTraj.txt',
-            ['test_data/test_trajectories/test_1ObservableTraj.txt']
+            TEST_TRAJ/'test_1ObservableTraj.txt',
+            [TEST_TRAJ/'test_1ObservableTraj.txt']
         ),
         (
-            'test_data/test_trajectories/test_3Observables_traj',
-            ['test_data/test_trajectories/test_3Observables_traj1.txt',
-             'test_data/test_trajectories/test_3Observables_traj2.txt',
-             'test_data/test_trajectories/test_3Observables_traj3.txt']
+            TEST_TRAJ/'test_3Observables_traj',
+            [TEST_TRAJ/'test_3Observables_traj1.txt',
+             TEST_TRAJ/'test_3Observables_traj2.txt',
+             TEST_TRAJ/'test_3Observables_traj3.txt']
         ),
         (
-            'test_data/test_trajectories/non_existing_file.txt',
+            TEST_TRAJ/'non_existing_file.txt',
             []
         ),
     ]
