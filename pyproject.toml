@@ -11,6 +11,13 @@ dependencies = [
 	"numpy>=2.0.0",
 	"matplotlib>=3.10.0",
 	"numba>=0.58",
+	"os",
+	"glob",
+	"warnings",
+	"genericpath",
+	"json",
+	"scipy",
+	"prettypyplot",
 ]
 
 [tool.setuptools]
