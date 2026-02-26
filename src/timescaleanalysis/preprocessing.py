@@ -4,8 +4,9 @@ from genericpath import isfile, isdir
 import numpy as np
 import os
 import timescaleanalysis.io as io
-import glob as glob
 import timescaleanalysis.utils as utils
+import glob as glob
+from pathlib import Path
 
 
 class Preprocessing:
@@ -52,7 +53,9 @@ class Preprocessing:
         """Get all files/trajectories in 'data_path' with the correct prefix.
         All files that fulfill data_path* are taken as input files.
         """
-        self.input_directories = glob.glob(f'{self.data_dir}*')
+        self.input_directories = [
+            Path(inDir) for inDir in glob.glob(f'{self.data_dir}*')
+        ]
 
     def load_absorption_spectra(self) -> None:
         """Load single absorption spectrum of experimental
