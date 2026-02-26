@@ -15,6 +15,7 @@ import timescaleanalysis.timescales
 TEST_TRAJ = Path(__file__).parent / 'test_data/test_trajectories'
 TEST_DATA = Path(__file__).parent / 'test_data'
 
+
 # Test function for timescales.load_data
 @pytest.mark.parametrize(
     'json_file, result_mean, result_sem, result_times, result_labels, error', [
