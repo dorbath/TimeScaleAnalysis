@@ -7,6 +7,11 @@ name = "timescaleanalysis"
 version = "0.0.1"
 description = "Analyze time dependent motions by fitting multi-exponential function."
 authors = [{ name="Emanuel Dorbath" }]
+dependencies = [
+	"numpy>=2.0.0",
+	"matplotlib>=3.10.0",
+	"numba>=0.58",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
