@@ -2,7 +2,6 @@
 
 """
 
-from tracemalloc import take_snapshot
 import numpy as np
 import pytest
 from pathlib import Path

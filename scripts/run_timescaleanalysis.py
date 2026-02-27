@@ -11,7 +11,7 @@ as they please, e.g. the used labels for plots, time steps etc.
 
 __author__ = "Emanuel Dorbath"
 
-from genericpath import isfile 
+from genericpath import isfile
 import numpy as np
 import matplotlib.pyplot as plt
 import prettypyplot as pplt
@@ -132,6 +132,11 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
+    io.save_npArray(
+        np.array([[1,2,3],[4,5,6],[7,8,9]]),
+        output_path,
+        'simple_array.txt',
+    )
 
     ###########################################################################
     # Plot heatmaps of each observable.

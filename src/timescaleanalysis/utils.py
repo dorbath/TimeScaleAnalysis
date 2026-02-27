@@ -1,9 +1,5 @@
-from genericpath import isfile
 import numpy as np
-import matplotlib.pyplot as plt
-import timescaleanalysis.plotting as plotting
 import timescaleanalysis.io as io
-import os
 import json
 import glob as glob
 from scipy.ndimage import gaussian_filter1d

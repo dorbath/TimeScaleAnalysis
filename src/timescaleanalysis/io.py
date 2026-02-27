@@ -44,7 +44,9 @@ def load_npArray(file_name: str) -> np.array:
         return load_array
 
 
-def save_json(output_dic: dict, output_path: str) -> str:
+def save_json(output_dic: dict,
+              output_path: str,
+              output_file: str = 'data_dic') -> str:
     """Save a dictionary as json file in 'output_path/preprocessed_data.json'.
     If this file already exists, add a counter to the file name
     to avoid overwriting an exisiting file.
@@ -53,27 +55,28 @@ def save_json(output_dic: dict, output_path: str) -> str:
     ----------
     output_dic: dict, dictionary to be saved as json file
     output_path: str, path to folder in which file is stored
+    output_file: str, json file name (default: 'data_dic')
 
     Return
     ------
     output_file: str, path to saved json file
     """
-    if isfile(output_path+'/preprocessed_data.json'):
-        print(("Preprocessed data file already exists! "
+    if isfile(f'{output_path}/{output_file}.json'):
+        print((f"Output file {output_path}/{output_file}.json already exists! "
                "Adjusting output file!"))
 
     # Make sure no file is overwritten
-    safety_file = output_path+'/preprocessed_data.json'
+    safety_file = output_path+'/'+output_file
     safety_counter = 1
-    while isfile(safety_file):
+    while isfile(safety_file+'.json'):
         safety_file = (
-            f"{output_path}/preprocessed_data_{safety_counter}.json"
+            f"{output_path}/{output_file}_{safety_counter}"
         )
         safety_counter += 1
     if safety_counter > 1:
-        output_file = safety_file
+        output_file = f'{safety_file}.json'
     else:
-        output_file = output_path+'/preprocessed_data.json'
+        output_file = f'{output_path}/{output_file}.json'
     print('Saving preprocessed data to '+output_file)
 
     with open(output_file, 'w') as f:

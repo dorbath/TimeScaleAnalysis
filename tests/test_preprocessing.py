@@ -273,17 +273,19 @@ def test_save_preprocessed_data(
         assert isfile(preP.data_dir)
         with open(result, 'r') as f:
             output_data = json.load(f)
+        with open(preP.data_dir, 'r') as f:
+            saved_data = json.load(f)
         np.testing.assert_allclose(
-            preP.data_mean.tolist(), output_data['data_mean']
+            saved_data['data_mean'], output_data['data_mean']
         )
         np.testing.assert_allclose(
-            preP.data_sem.tolist(), output_data['data_sem']
+            saved_data['data_sem'], output_data['data_sem']
         )
         np.testing.assert_allclose(
-            preP.options['times'].tolist(), output_data['times']
+            saved_data['times'], output_data['times']
         )
         np.testing.assert_equal(
-            preP.labels_lst, output_data['labels']
+            saved_data['labels'], output_data['labels']
         )
     else:
         with pytest.raises(error):

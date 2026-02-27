@@ -434,4 +434,7 @@ class Preprocessing:
             'times': self.options['times'].tolist(),
             'labels': self.labels_lst.tolist()
         }
-        self.data_dir = io.save_json(output_dic, output_path)
+        self.data_dir = io.save_json(
+            output_dic,
+            output_path,
+            output_file='preprocessed_data')
