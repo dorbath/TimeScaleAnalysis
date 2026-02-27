@@ -8,8 +8,7 @@ from pathlib import Path
 from genericpath import isfile
 import json as json
 
-import timescaleanalysis
-import timescaleanalysis.preprocessing
+import timescaleanalysis.preprocessing as preprocessing
 
 TEST_TRAJ = Path(__file__).parent / 'test_data/test_trajectories'
 TEST_DATA = Path(__file__).parent / 'test_data'
@@ -36,7 +35,7 @@ TEST_DATA = Path(__file__).parent / 'test_data'
 )
 def test_generate_input_trajectories(
         data_dir, result_directories):
-    preP = timescaleanalysis.preprocessing.Preprocessing(data_dir)
+    preP = preprocessing.Preprocessing(data_dir)
     preP.generate_input_trajectories()
     assert preP.input_directories == result_directories
 
@@ -102,7 +101,7 @@ def test_load_trajectories(
         averaged,
         result_files,
         error):
-    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP = preprocessing.Preprocessing(TEST_TRAJ)
     preP.input_directories = input_directories
     if not error:
         preP.load_trajectories(n_traj_conc=n_traj_conc, averaged=averaged)
@@ -127,7 +126,7 @@ def test_load_trajectories(
 def test_load_absorption_spectra(
         input_directories,
         result):
-    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP = preprocessing.Preprocessing(TEST_TRAJ)
     preP.input_directories = input_directories
     preP.load_absorption_spectra()
     with open(result, 'r') as f:
@@ -150,24 +149,24 @@ def test_load_absorption_spectra(
 @pytest.mark.parametrize(
     'input_data_arr, n_steps, result_shape, error', [
         (
-            [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt'],
-            int(1e4),
-            (1, 1e4),
-            None
+          [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt'],
+          int(1e4),
+          (1, 1e4),
+          None
         ),
         (
-            [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt',
-             TEST_DATA/'test_data_arr/'
-             'test_data_arr_1Observable_short_10thFrame.txt'],
-            int(1e4),
-            (2, 1e4),
-            None
+          [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt',
+           TEST_DATA/'test_data_arr/'
+           'test_data_arr_1Observable_short_10thFrame.txt'],
+          int(1e4),
+          (2, 1e4),
+          None
         ),
         (
-            [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt'],
-            int(500),
-            None,
-            ValueError
+          [TEST_DATA/'test_data_arr/test_data_arr_1Observable_10thFrame.txt'],
+          int(500),
+          None,
+          ValueError
         ),
     ]
 )
@@ -176,7 +175,7 @@ def test_reshape_same_length(
         n_steps,
         result_shape,
         error):
-    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP = preprocessing.Preprocessing(TEST_TRAJ)
     preP.data_arr = [
         np.loadtxt(data, dtype=np.float16)
         for data in input_data_arr
@@ -215,7 +214,7 @@ def test_get_time_array(
         sim_file,
         result,
         error):
-    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP = preprocessing.Preprocessing(TEST_TRAJ)
     preP.options['sim_file'] = sim_file
     preP.n_steps = int(1e4)
     if not error:
@@ -257,7 +256,7 @@ def test_save_preprocessed_data(
         output_path,
         result,
         error):
-    preP = timescaleanalysis.preprocessing.Preprocessing(TEST_TRAJ)
+    preP = preprocessing.Preprocessing(TEST_TRAJ)
     preP.data_mean = np.loadtxt(
         TEST_DATA/'test_save_data/test_data_mean.txt'
     )

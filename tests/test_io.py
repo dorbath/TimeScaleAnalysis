@@ -8,8 +8,7 @@ from pathlib import Path
 from genericpath import isfile
 import json as json
 
-import timescaleanalysis
-import timescaleanalysis.io
+import timescaleanalysis.io as io
 
 TEST_TRAJ = Path(__file__).parent / 'test_data/test_trajectories'
 TEST_DATA = Path(__file__).parent / 'test_data'
@@ -36,11 +35,11 @@ def test_load_npArray(
         result,
         error):
     if not error:
-        loaded_array = timescaleanalysis.io.load_npArray(input_file)
+        loaded_array = io.load_npArray(input_file)
         np.testing.assert_allclose(loaded_array, result)
     else:
         with pytest.raises(error):
-            timescaleanalysis.io.load_npArray(input_file)
+            io.load_npArray(input_file)
 
 
 # Test function for io.save_npArray
@@ -59,10 +58,10 @@ def test_save_npArray(
         folder_path,
         file_name,
         comment):
-    timescaleanalysis.io.save_npArray(array, folder_path, file_name, comment)
+    io.save_npArray(array, folder_path, file_name, comment)
     assert isfile(folder_path/file_name)
     np.testing.assert_allclose(
-        timescaleanalysis.io.load_npArray(folder_path/file_name), array
+        io.load_npArray(folder_path/file_name), array
     )
 
 
@@ -83,7 +82,7 @@ def test_save_json(
         output_dic,
         output_path,
         output_file):
-    output_file = timescaleanalysis.io.save_json(
+    output_file = io.save_json(
         output_dic,
         str(output_path),
         output_file=output_file

@@ -2,6 +2,7 @@ import numpy as np
 import timescaleanalysis.io as io
 import json
 import glob as glob
+from pathlib import Path
 from scipy.ndimage import gaussian_filter1d
 
 
@@ -21,7 +22,6 @@ def gaussian_smooth(
     ------
     smoothed data as np.array
     """
-
     return gaussian_filter1d(data, sigma, mode=mode)
 
 
@@ -39,7 +39,7 @@ def generate_input_trajectories(
     folder_prefix: str, path to folder with trajectories
     input_directories: list of str, list of files with trajectories
     """
-    return glob.glob(f'{file_dir}*')
+    return [Path(inDir) for inDir in glob.glob(f'{file_dir}*')]
 
 
 def derive_dynamical_content(
