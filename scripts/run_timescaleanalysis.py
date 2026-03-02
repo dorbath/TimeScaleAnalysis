@@ -111,7 +111,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # Generate multi-exponential time traces with perfectly known
     # timescales, amplitudes.
     utils.generate_multi_exp_timetrace(
-        'scripts/example_json_Absorption.json',
+        'tests/test_data/test_generate_timetrace/test_multiExp.json',
         output_path='.',
         output_file='multi_exp_function_example.txt'
     )
@@ -132,11 +132,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
-    io.save_npArray(
-        np.array([[1,2,3],[4,5,6],[7,8,9]]),
-        output_path,
-        'simple_array.txt',
-    )
 
     ###########################################################################
     # Plot heatmaps of each observable.

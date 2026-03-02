@@ -61,7 +61,7 @@ def derive_dynamical_content(
     """
     # The first entry is removed as it corresponds to an offset that
     # does not contribute to the dynamics
-    if spectrum.shape[1] < 2:
+    if spectrum.ndim != 2:
         raise ValueError(
             "Spectrum must have at least two columns: "
             "1st column: times tau_k, "

@@ -58,13 +58,81 @@ def test_generate_input_trajectories(
     assert input_directories == result_directories
 
 
-def test_derive_dynamical_content():
-    pass
+# Test function for utils.derive_dynamical_content
+@pytest.mark.parametrize(
+        'input_spectrum, result, error', [
+            (
+                TEST_DATA/'test_tsa_spectrum/test_spectra_3Observables.txt',
+                TEST_DATA/'test_tsa_spectrum/test_dynCont_3Observables.txt',
+                None
+            ),
+            (
+                TEST_DATA/'test_tsa_spectrum/test_SingleCol.txt',
+                None,
+                ValueError
+            ),
+        ]
+)
+def test_derive_dynamical_content(
+        input_spectrum,
+        result,
+        error):
+    spectrum = np.loadtxt(input_spectrum)
+    if not error:
+        tau_k, dynamic_content = utils.derive_dynamical_content(spectrum)
+        np.testing.assert_allclose(tau_k, np.loadtxt(result)[:, 0])
+        np.testing.assert_allclose(dynamic_content, np.loadtxt(result)[:, 1])
+    else:
+        with pytest.raises(error):
+            utils.derive_dynamical_content(spectrum)
 
 
-def test_absmax():
-    pass
+# Test function for utils.absmax
+@pytest.mark.parametrize(
+        'data, axis, result', [
+            (
+                np.array([[1, -5, 6], [-4, 2, -3]]),
+                0,
+                np.array([4, 5, 6])
+            ),
+            (
+                np.array([[1, -5, 6], [-4, 2, -3]]),
+                1,
+                np.array([6, 4])
+            ),
+            (
+                np.array([[1, -5, 6], [-4, 2, -3]]),
+                None,
+                6
+            )
+        ]
+)
+def test_absmax(
+        data,
+        axis,
+        result):
+    np.testing.assert_allclose(utils.absmax(data, axis), result)
 
 
-def test_generate_multi_exp_timetrace():
-    pass
+# Test function for utils.generate_multi_exp_timetrace
+@pytest.mark.parametrize(
+        'input_json', [
+                TEST_DATA/'test_generate_timetrace/test_multiExp.json'
+        ]
+)
+def test_generate_multi_exp_timetrace(
+        input_json):
+    output_file = TEST_DATA/'test_output_files/test_multiExp_timetrace.txt'
+    multiExp_data = utils.generate_multi_exp_timetrace(
+        str(input_json),
+        str(TEST_DATA/'test_output_files/'),
+        'test_multiExp_timetrace.txt'
+    )
+    assert isfile(output_file)
+    with open(input_json, 'r') as f:
+        json_dic = json.load(f)
+    assert multiExp_data.shape[0] == json_dic['n_steps']
+    assert multiExp_data.shape[1] == len(json_dic['offset'])
+    np.testing.assert_equal(
+        multiExp_data,
+        np.loadtxt(output_file))
