@@ -2,13 +2,13 @@
 
 """
 
+import timescaleanalysis.io as io
+
 import numpy as np
 import pytest
 from pathlib import Path
 from genericpath import isfile
 import json as json
-
-import timescaleanalysis.io as io
 
 TEST_TRAJ = Path(__file__).parent / 'test_data/test_trajectories'
 TEST_DATA = Path(__file__).parent / 'test_data'

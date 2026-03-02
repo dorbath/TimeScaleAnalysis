@@ -9,9 +9,9 @@ def plot_TSA(
         data_sem: np.array,
         spectrum: np.array,
         times: np.array,
-        lag_rates: np.array,
-        n_steps: int) -> tuple:
+        lag_rates: np.array) -> tuple:
     """Plot for each observable the averaged time trace and timescale spectrum"""
+    n_steps = len(times)
     upper_bound = np.add(data_mean, data_sem)
     lower_bound = np.subtract(data_mean, data_sem)
     laplace_trafo = np.array(
@@ -77,12 +77,11 @@ def plot_2D_histogram(xVal, yVal, zVals) -> None:
     yVal: np.array, edges of bins for y-axis
     zVals: np.array, 2D array of values for each bin defined by xVal and yVal
     """
-    assert len(xVal) == zVals.shape[1]+1, (
-        "xVal are bin edges. Must have one more entry than zVals.shape[1]"
-    )
-    assert len(yVal) == zVals.shape[0]+1, (
-        "yVal are bin edges. Must have one more entry than zVals.shape[0]"
-    )
+    if len(xVal) != zVals.shape[1]+1 or len(yVal) != zVals.shape[0]+1:
+        raise ValueError(
+            "xVal and yVal are bin edges. "
+            "Must have one more entry than zVals.shape[1]"
+        )
     # Plot the heatmap
     cmap = get_alpha_cmap('macaw_r', alpha_fraction=0.25)
     cmap.set_under(color='w')
@@ -94,14 +93,16 @@ def plot_2D_histogram(xVal, yVal, zVals) -> None:
 def get_alpha_cmap(
         cmap: str,
         alpha_fraction: float = 0.1) -> mpl.colors.ListedColormap:
-    """Add alpha channel to cmap for better contrast"""
+    """Add alpha channel to cmap for better contrast
+    The lower color range will be suppressed
+    """
     cmap = plt.get_cmap(cmap)
     cmap_alpha = cmap(np.arange(cmap.N))
     ncolors = len(cmap_alpha)
 
     alpha = np.ones(ncolors)
     alpha_n = int(alpha_fraction * ncolors)
-    alpha[:alpha_n] = np.linspace(0, 1, alpha_n)  # remove high values
+    alpha[:alpha_n] = np.linspace(0, 1, alpha_n)  # suppress low values
     cmap_alpha[:, -1] = alpha
     return mpl.colors.ListedColormap(cmap_alpha)
 

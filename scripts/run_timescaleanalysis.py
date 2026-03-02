@@ -133,19 +133,20 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
 
+    alpha_cmap = plotting.get_alpha_cmap('viridis', alpha_fraction=0.1)
     ###########################################################################
     # Plot heatmaps of each observable.
     # These are time-dependent population distributions
     # which reveal the collective shift in observables.
     # It may be advantageous to perform scipy.ndimage.gaussian_filter
     # onto the single heatmap prior to plotting.
-    #heatmaps = suppAna.get_population_heatmaps(
-    #    preP, lowBound=1e0, upBound=1e6, valueRange=[0.0, 4.5]
-    #)
-    #for i in range(len(heatmaps[2])):
-    #    plotting.plot_2D_histogram(heatmaps[0], heatmaps[1], heatmaps[2][i])
-    #    plt.xlim(1e0, 1e6)
-    #    plotting.save_fig(f'{output_path}/time_dependent_distribution_{i}.pdf')
+    heatmaps = suppAna.get_population_heatmaps(
+        preP, lowBound=1e0, upBound=1e6, valueRange=[0.0, 4.5]
+    )
+    for i in range(len(heatmaps[2])):
+        plotting.plot_2D_histogram(heatmaps[0], heatmaps[1], heatmaps[2][i])
+        plt.xlim(1e0, 1e6)
+        plotting.save_fig(f'{output_path}/time_dependent_distribution_{i}.pdf')
     ###########################################################################
 
     ###########################################################################
@@ -209,8 +210,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             temp_sem,
             tsa.spectrum,
             tsa.times,
-            lag_rates,
-            tsa.n_steps
+            lag_rates
         )
         ax1.set_xlim(1e-1, 1e5)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')

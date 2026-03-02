@@ -115,8 +115,7 @@ def main(data_path, fit_n_decades, output_path):
             temp_sem,
             tsa.spectrum,
             tsa.times,
-            lag_rates,
-            tsa.n_steps
+            lag_rates
         )
         ax1.set_xlim(1e-1, 1e5)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
