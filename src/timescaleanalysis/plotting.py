@@ -94,7 +94,8 @@ def get_alpha_cmap(
         cmap: str,
         alpha_fraction: float = 0.1) -> mpl.colors.ListedColormap:
     """Add alpha channel to cmap for better contrast
-    The lower color range will be suppressed
+    The lower color range will be suppressed, large alpha values suppress
+    more of the value range.
     """
     cmap = plt.get_cmap(cmap)
     cmap_alpha = cmap(np.arange(cmap.N))

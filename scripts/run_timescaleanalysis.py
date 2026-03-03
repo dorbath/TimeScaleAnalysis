@@ -14,6 +14,7 @@ __author__ = "Emanuel Dorbath"
 from genericpath import isfile
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import prettypyplot as pplt
 import sys
 import timescaleanalysis.utils as utils
@@ -128,12 +129,11 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories()
+    preP.load_trajectories(n_traj_conc=100)
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
 
-    alpha_cmap = plotting.get_alpha_cmap('viridis', alpha_fraction=0.1)
     ###########################################################################
     # Plot heatmaps of each observable.
     # These are time-dependent population distributions
@@ -141,11 +141,11 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # It may be advantageous to perform scipy.ndimage.gaussian_filter
     # onto the single heatmap prior to plotting.
     heatmaps = suppAna.get_population_heatmaps(
-        preP, lowBound=1e0, upBound=1e6, valueRange=[0.0, 4.5]
+        preP, lowBound=1e2, upBound=1e6, valueRange=[0.0, 1.5]
     )
     for i in range(len(heatmaps[2])):
         plotting.plot_2D_histogram(heatmaps[0], heatmaps[1], heatmaps[2][i])
-        plt.xlim(1e0, 1e6)
+        plt.xlim(1e2, 1e6)
         plotting.save_fig(f'{output_path}/time_dependent_distribution_{i}.pdf')
     ###########################################################################
 

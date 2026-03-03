@@ -225,4 +225,3 @@ def get_population_heatmaps(
         heatmaps.append(single_heatmap)
 
     return time_bins, value_bins, heatmaps
-

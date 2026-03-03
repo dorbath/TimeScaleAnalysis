@@ -98,34 +98,127 @@ def test_plot_2D_histogram(
             (
                 'macaw_r',
                 0.5,
+            ),
+            (
+                'viridis',
+                0.8,
             )
         ]
 )
 def test_get_alpha_cmap(
         cmap_name,
         alpha):
-    alpha_cmap = plotting.get_alpha_cmap(cmap_name, alpha)
-    assert isinstance(alpha_cmap, mpl.colors.ListedColormap)
+    cmap_alpha = plotting.get_alpha_cmap(cmap_name, alpha)
+    assert isinstance(cmap_alpha, mpl.colors.ListedColormap)
+    ncolors = len(cmap_alpha.colors)
+    alpha_n = int(ncolors * alpha)
+    np.testing.assert_allclose(
+        cmap_alpha.colors[:alpha_n, -1],
+        np.linspace(0, 1, alpha_n)[:ncolors]
+    )
+    np.testing.assert_allclose(
+        cmap_alpha.colors[:, :-1],
+        plt.get_cmap(cmap_name)(np.arange(plt.get_cmap(cmap_name).N))[:, :-1]
+    )
 
 
 # Test function for plotting.pretty_label
-def test_pretty_label():
-    pass
+@pytest.mark.parametrize(
+        'label, prefix, result', [
+            (
+                'X_Y',
+                'd',
+                'd(X,Y)'
+            ),
+            (
+                'x1',
+                '',
+                'x1'
+            )
+        ]
+)
+def test_pretty_label(
+        label,
+        prefix,
+        result):
+    new_label = plotting.pretty_label(label, prefix=prefix)
+    assert new_label == result
 
 
 # Test function for plotting._log_axis
-def test__log_axis():
-    pass
+@pytest.mark.parametrize(
+        'axis, error', [
+            (
+                'x',
+                None
+            ),
+            (
+                'xy',
+                None
+            ),
+            (
+                '1',
+                ValueError
+            )
+        ]
+)
+def test__log_axis(
+        axis,
+        error):
+    fig, ax = plt.subplots()
+    if not error:
+        plotting._log_axis(ax, axis)
+        if axis in ['x', 'xy', 'yx']:
+            assert ax.get_xscale() == 'symlog'
+        else:
+            assert ax.get_xscale() == 'linear'
+        if axis in ['y', 'xy', 'yx']:
+            assert ax.get_yscale() == 'symlog'
+        else:
+            assert ax.get_yscale() == 'linear'
+    else:
+        with pytest.raises(error):
+            plotting._log_axis(ax, axis)
 
 
 # Test function for plotting.save_fig
-def test_save_fig():
-    pass
+@pytest.mark.parametrize(
+        'path', [
+            TEST_DATA/'test_output_files/test_save_fig.pdf'
+        ]
+)
+def test_save_fig(
+        path):
+    plt.plot()
+    plotting.save_fig(str(path))
+    assert isfile(path)
 
 
 # Test function for plotting._color_cycle
-def test__color_cycle():
-    pass
+@pytest.mark.parametrize(
+        'result', [
+            np.array([
+                '#005B8E',
+                '#E69F00',
+                '#D55E00',
+                '#000000',
+                '#BE548F',
+                '#009E73',
+                '#56B4E9'
+            ])
+        ]
+)
+def test__color_cycle(
+        result):
+    plotting._color_cycle()
+    np.testing.assert_equal(
+        plt.rcParams['axes.prop_cycle'].by_key()['color'][:7],
+        result
+    )
+
+
+
+
 
 
 
