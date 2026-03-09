@@ -5,6 +5,10 @@ __all__ = [
     'state_modeling',
     'plotting']
 
+import timescaleanalysis.utils
+import timescaleanalysis.plotting
+import timescaleanalysis.io
+import timescaleanalysis.supplementary_analyses
 from .preprocessing import Preprocessing
 from .timescales import TimeScaleAnalysis
 

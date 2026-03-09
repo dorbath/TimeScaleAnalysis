@@ -21,14 +21,14 @@ import timescaleanalysis
 
 # Provide path to data file(s), all are used that fulfill path/to/data*
 # Load and prepare data (execute a single time)
-preP = timescaleanalysis.preprocessing(data_path)
+preP = timescaleanalysis.Preprocessing(data_path)
 preP.generate_input_trajectories()
 preP.load_trajectories()
 preP.get_time_array()
 preP.save_preprocessed_data()
 
 # Perform analysis for each observable over 'fit_n_decades' decades
-tsa = timescaleanalysis.timescales(preP.data_dir, fit_n_decades)
+tsa = timescaleanalysis.TimeScaleAnalysis(preP.data_dir, fit_n_decades)
 tsa.load_data()
 for i in range(tsa.data_arr.shape[1]):
   tsa.options['temp_mean'] = tsa.data_mean[:, i]
