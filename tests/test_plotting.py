@@ -214,17 +214,3 @@ def test__color_cycle(
         plt.rcParams['axes.prop_cycle'].by_key()['color'][:7],
         result
     )
-
-
-
-
-
-
-
-
-
-
-
-
-
-

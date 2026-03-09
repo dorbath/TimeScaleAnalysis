@@ -21,8 +21,7 @@ import timescaleanalysis.utils as utils
 import timescaleanalysis.plotting as plotting
 import timescaleanalysis.io as io
 import timescaleanalysis.supplementary_analyses as suppAna
-from timescaleanalysis.timescales import TimeScaleAnalysis
-from timescaleanalysis.preprocessing import Preprocessing
+import timescaleanalysis
 import click
 
 pplt.use_style(colors='cbf8', cmap='macaw_r')
@@ -123,7 +122,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     preP = None
     ###########################################################################
     # Perform preprocessing
-    preP = Preprocessing(
+    preP = timescaleanalysis.Preprocessing(
         data_path,
         sim_file=sim_file,
         label_file=label_file
@@ -154,7 +153,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # The important parameter is Preprocessing.data_dir from which
     # the preprocess data is loaded.
     if preP is None:
-        preP = Preprocessing(data_path)
+        preP = timescaleanalysis.Preprocessing(data_path)
     assert isfile(preP.data_dir), (
         "Input data is not correctly preprocessed! "
         "Preprocessing.save_preprocessed_data() must be used to save "
@@ -163,7 +162,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     ###########################################################################
 
     # Alternatively, directly put data_path into the TSA class
-    tsa = TimeScaleAnalysis(preP.data_dir, fit_n_decades)
+    tsa = timescaleanalysis.TimeScaleAnalysis(preP.data_dir, fit_n_decades)
     tsa.load_data()
 
     # Derive dynamical content for all observables on the fly

@@ -11,7 +11,9 @@ For more detailed information about the method, see [1](https://doi.org/10.1366/
 - Single final time-dependent observable for the entire system
 
 ## Installation
+```
 pip install git+https://github.com/dorbath/TimeScaleAnalysis.git
+```
 
 ### Module - As part of your python script
 ```python
@@ -25,8 +27,8 @@ preP.load_trajectories()
 preP.get_time_array()
 preP.save_preprocessed_data()
 
-# Perform analysis for each observable
-tsa = timescaleanalysis.timescales(preP.data_dir)
+# Perform analysis for each observable over 'fit_n_decades' decades
+tsa = timescaleanalysis.timescales(preP.data_dir, fit_n_decades)
 tsa.load_data()
 for i in range(tsa.data_arr.shape[1]):
   tsa.options['temp_mean'] = tsa.data_mean[:, i]

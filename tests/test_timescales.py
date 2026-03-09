@@ -2,7 +2,7 @@
 
 """
 
-import timescaleanalysis.timescales as timescales
+import timescaleanalysis
 
 import numpy as np
 import pytest
@@ -41,7 +41,7 @@ def test_load_data(
         result_times,
         result_labels,
         error):
-    tsa = timescales.TimeScaleAnalysis(json_file, 1)
+    tsa = timescaleanalysis.TimeScaleAnalysis(json_file, 1)
     if not error:
         tsa.load_data()
         np.testing.assert_allclose(
@@ -94,7 +94,7 @@ def test_interpolate_data_points(
         iterations,
         result,
         error):
-    tsa = timescales.TimeScaleAnalysis(TEST_TRAJ, 1)
+    tsa = timescaleanalysis.TimeScaleAnalysis(TEST_TRAJ, 1)
     if not error:
         tsa.data_mean = array
         tsa.data_sem = array
@@ -127,7 +127,7 @@ def test_interpolate_data_points(
 def test_log_space_data(
         lin_shape,
         log_result):
-    tsa = timescales.TimeScaleAnalysis(TEST_TRAJ, 1)
+    tsa = timescaleanalysis.TimeScaleAnalysis(TEST_TRAJ, 1)
     tsa.data_mean = np.zeros(lin_shape)
     tsa.data_sem = np.zeros(lin_shape)
     tsa.times = np.arange(lin_shape[0])
@@ -152,7 +152,7 @@ def test_log_space_data(
 def test_extend_timeTrace(
         initial_shape,
         extended_result):
-    tsa = timescales.TimeScaleAnalysis(TEST_TRAJ, 1)
+    tsa = timescaleanalysis.TimeScaleAnalysis(TEST_TRAJ, 1)
     tsa.data_mean = np.zeros(initial_shape)
     tsa.data_sem = np.zeros(initial_shape)
     tsa.times = np.arange(initial_shape[0])
@@ -172,7 +172,7 @@ def test_extend_timeTrace(
 def test_perform_tsa(
         input_json,
         result_spectrum):
-    tsa = timescales.TimeScaleAnalysis(TEST_TRAJ, 1)
+    tsa = timescaleanalysis.TimeScaleAnalysis(TEST_TRAJ, 1)
     with open(input_json, 'r') as f:
         input_dict = json.load(f)
     tsa.options['temp_mean'] = np.array(input_dict['data_mean'])

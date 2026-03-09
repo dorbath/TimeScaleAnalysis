@@ -2,7 +2,7 @@
 
 """
 
-import timescaleanalysis.preprocessing as preprocessing
+import timescaleanalysis
 
 import numpy as np
 import pytest
@@ -35,7 +35,7 @@ TEST_DATA = Path(__file__).parent / 'test_data'
 )
 def test_generate_input_trajectories(
         data_dir, result_directories):
-    preP = preprocessing.Preprocessing(data_dir)
+    preP = timescaleanalysis.Preprocessing(data_dir)
     preP.generate_input_trajectories()
     assert preP.input_directories == result_directories
 
@@ -101,7 +101,7 @@ def test_load_trajectories(
         averaged,
         result_files,
         error):
-    preP = preprocessing.Preprocessing(TEST_TRAJ)
+    preP = timescaleanalysis.Preprocessing(TEST_TRAJ)
     preP.input_directories = input_directories
     if not error:
         preP.load_trajectories(n_traj_conc=n_traj_conc, averaged=averaged)
@@ -126,7 +126,7 @@ def test_load_trajectories(
 def test_load_absorption_spectra(
         input_directories,
         result):
-    preP = preprocessing.Preprocessing(TEST_TRAJ)
+    preP = timescaleanalysis.Preprocessing(TEST_TRAJ)
     preP.input_directories = input_directories
     preP.load_absorption_spectra()
     with open(result, 'r') as f:
@@ -175,7 +175,7 @@ def test_reshape_same_length(
         n_steps,
         result_shape,
         error):
-    preP = preprocessing.Preprocessing(TEST_TRAJ)
+    preP = timescaleanalysis.Preprocessing(TEST_TRAJ)
     preP.data_arr = [
         np.loadtxt(data, dtype=np.float16)
         for data in input_data_arr
@@ -214,7 +214,7 @@ def test_get_time_array(
         sim_file,
         result,
         error):
-    preP = preprocessing.Preprocessing(TEST_TRAJ)
+    preP = timescaleanalysis.Preprocessing(TEST_TRAJ)
     preP.options['sim_file'] = sim_file
     preP.n_steps = int(1e4)
     if not error:
@@ -256,7 +256,7 @@ def test_save_preprocessed_data(
         output_path,
         result,
         error):
-    preP = preprocessing.Preprocessing(TEST_TRAJ)
+    preP = timescaleanalysis.Preprocessing(TEST_TRAJ)
     preP.data_mean = np.loadtxt(
         TEST_DATA/'test_save_data/test_data_mean.txt'
     )

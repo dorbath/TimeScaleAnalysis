@@ -13,7 +13,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import prettypyplot as pplt
 import timescaleanalysis.plotting as plotting
-from timescaleanalysis.preprocessing import Preprocessing
+import timescaleanalysis
 import click
 
 pplt.use_style(colors='cbf8', cmap='macaw_r')
@@ -62,7 +62,7 @@ plotting._color_cycle()
     help='Path to output files',
 )
 def main(data_path, sim_file, label_file, output_path):
-    preP = Preprocessing(
+    preP = timescaleanalysis.Preprocessing(
         data_path,
         sim_file=sim_file,
         label_file=label_file

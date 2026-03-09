@@ -14,8 +14,7 @@ import prettypyplot as pplt
 import timescaleanalysis.utils as utils
 import timescaleanalysis.plotting as plotting
 import timescaleanalysis.io as io
-from timescaleanalysis.timescales import TimeScaleAnalysis
-from timescaleanalysis.preprocessing import Preprocessing
+import timescaleanalysis
 import click
 
 pplt.use_style(colors='cbf8', cmap='macaw_r')
@@ -72,7 +71,7 @@ plotting._color_cycle()
     help='Path to output files',
 )
 def main(data_path, sim_file, label_file, fit_n_decades, output_path):
-    preP = Preprocessing(
+    preP = timescaleanalysis.Preprocessing(
         data_path,
         sim_file=sim_file,
         label_file=label_file
@@ -82,7 +81,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
 
-    tsa = TimeScaleAnalysis(preP.data_dir, fit_n_decades)
+    tsa = timescaleanalysis.TimeScaleAnalysis(preP.data_dir, fit_n_decades)
     tsa.load_data()
     # Interpolate additional data points as mean values
     tsa.interpolate_data_points(iterations=2)
