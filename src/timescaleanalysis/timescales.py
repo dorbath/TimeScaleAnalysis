@@ -418,6 +418,4 @@ class TimeScaleAnalysis:
             )
         self.spectrum = np.zeros((2, nR), dtype=np.float32).T
         self.spectrum[:, 1] = temp_fit_amplitudes
-        for k in range(1, nR):
-            self.spectrum[k][0] = 1.0/lag_rates[k]
-        return lag_rates
+        self.spectrum[1:, 0] = 1.0/lag_rates[1:]

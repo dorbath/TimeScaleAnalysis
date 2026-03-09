@@ -32,8 +32,7 @@ def test_plot_TSA(
         np.asarray(input_data['data_mean']),
         np.asarray(input_data['data_sem']),
         np.asarray(input_data['spectrum']),
-        np.asarray(input_data['times']),
-        np.asarray(input_data['lag_rates'])
+        np.asarray(input_data['times'])
     )
     assert isinstance(ax1, mpl.axes.Axes)
     assert isinstance(ax2, mpl.axes.Axes)

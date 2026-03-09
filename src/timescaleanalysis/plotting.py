@@ -8,12 +8,14 @@ def plot_TSA(
         data_mean: np.array,
         data_sem: np.array,
         spectrum: np.array,
-        times: np.array,
-        lag_rates: np.array) -> tuple:
+        times: np.array) -> tuple:
     """Plot for each observable the averaged time trace and timescale spectrum"""
     n_steps = len(times)
     upper_bound = np.add(data_mean, data_sem)
     lower_bound = np.subtract(data_mean, data_sem)
+    lag_rates = np.zeros(spectrum.shape[0])
+    lag_rates[1:] = 1.0/spectrum[1:, 0]
+
     laplace_trafo = np.array(
         [np.sum(spectrum[:, 1]*np.exp(-times[j]*lag_rates))
          for j in range(n_steps)])

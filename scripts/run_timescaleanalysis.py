@@ -129,7 +129,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories(n_traj_conc=100)
+    preP.load_trajectories()
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
@@ -200,7 +200,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         tsa.options['temp_mean'] = temp_mean
         tsa.options['temp_sem'] = temp_sem
         regPara = 100
-        lag_rates = tsa.perform_tsa(
+        tsa.perform_tsa(
             regPara=regPara,
             startTime=1e-1,
             posVal=False
@@ -209,8 +209,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             temp_mean,
             temp_sem,
             tsa.spectrum,
-            tsa.times,
-            lag_rates
+            tsa.times
         )
         ax1.set_xlim(1e-1, 1e5)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')

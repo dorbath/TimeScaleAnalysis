@@ -79,7 +79,7 @@ def main(data_path, fit_n_decades, output_path):
         tsa.options['temp_mean'] = temp_mean
         tsa.options['temp_sem'] = temp_sem
         regPara = 100
-        lag_rates = tsa.perform_tsa(
+        tsa.perform_tsa(
             regPara=regPara,
             startTime=1e-1,
             posVal=False
@@ -88,8 +88,7 @@ def main(data_path, fit_n_decades, output_path):
             temp_mean,
             temp_sem,
             tsa.spectrum,
-            tsa.times,
-            lag_rates
+            tsa.times
         )
         ax1.set_xlim(1e-1, 1e5)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
