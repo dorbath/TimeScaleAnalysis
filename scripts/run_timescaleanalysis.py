@@ -111,7 +111,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # Generate multi-exponential time traces with perfectly known
     # timescales, amplitudes.
     utils.generate_multi_exp_timetrace(
-        'tests/test_data/test_generate_timetrace/test_multiExp.json',
+        'tutorial/Tutorial_multiExp.json',
         output_path='.',
         output_file='multi_exp_function_example.txt'
     )
@@ -170,7 +170,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         (tsa.fit_n_decades*10+1)*2,
         dtype=np.float64).reshape((2, (tsa.fit_n_decades*10+1))).T
 
-    # Interpolate additional data points as mean values
+    # Interpolate additional data points as mean values between two points
     tsa.interpolate_data_points(iterations=2)
     # Transform linear frames into logarithmic ones
     tsa.log_space_data(5000)
@@ -198,10 +198,10 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         # Provide single observable to TSA class
         tsa.options['temp_mean'] = temp_mean
         tsa.options['temp_sem'] = temp_sem
-        regPara = 100
+        regPara = 200
         tsa.perform_tsa(
             regPara=regPara,
-            startTime=1e-1,
+            startTime=1e0,
             posVal=False
         )
         ax1, ax2 = plotting.plot_TSA(
@@ -210,7 +210,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             tsa.spectrum,
             tsa.times
         )
-        ax1.set_xlim(1e-1, 1e5)
+        ax1.set_xlim(1e0, 1e4)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
         ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix='r')}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')
@@ -281,7 +281,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # In this case, multiple 'timescale_spectra' must be loaded and then can
     # be easily plotted into the same figure with the ax=ax1 parameter.
     ax1 = plotting.plot_dynamical_content(temp_tau_k, temp_dyn_cont)
-    ax1.set_xlim(1e-1, 1e5)
+    ax1.set_xlim(1e0, 1e4)
     ax1.set_ylim(0, ax1.get_ylim()[1])
     plotting.save_fig(f'{output_path}/dynamical_content.pdf')
 

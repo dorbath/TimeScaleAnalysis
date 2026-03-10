@@ -313,11 +313,21 @@ class TimeScaleAnalysis:
         self.times = self.times[log_spaced_index_mask]
         self.n_steps = len(log_spaced_index_mask)
 
-    def extend_timeTrace(self) -> None:
+    def extend_timeTrace(self, frac_decade: float = 5/10) -> None:
         """Append one order of magnitude to the data by a constant value
-        derived as average over ~1/2 decade.
-        On a log-scale, the final half decade is rather short."""
+        derived as average over 'frac_decade' decade.
+        On a log-scale, the final half decade is rather short.
+
+        Parameters
+        ----------
+        frac_decade: float, fraction of decade used for averaging,
+                     must be in range (0,1), (Default: 5/10 = 1/2 decade)
+                     Clarification:
+                     1/10 = 1 decade, 1/100 = 2 decades, 9/10 = 0.1 decades
+        """
         # Create copys to avoid overwriting of original data during appending
+        if frac_decade <= 0 or frac_decade >= 1:
+            raise ValueError("'frac_decade' must be in range (0,1)!")
         times = self.times
         data_mean = np.asarray(self.data_mean)
         data_sem = np.asarray(self.data_sem)
@@ -327,7 +337,7 @@ class TimeScaleAnalysis:
         # Get number of frames to append and frame index from which
         # the final half decade begins.
         n_frames_perOrder = N - np.where(times > times[-1]/10)[0][0]
-        low_bound_frame = len(np.where(times >= times[-1]/2)[0])
+        low_bound_frame = len(np.where(times >= times[-1]*frac_decade)[0])
 
         # Perform averages of mean and SEM
         temp_append_mean = np.mean(data_mean[-low_bound_frame:], axis=0)
