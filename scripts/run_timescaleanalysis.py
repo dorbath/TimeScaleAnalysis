@@ -14,9 +14,7 @@ __author__ = "Emanuel Dorbath"
 from genericpath import isfile
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib as mpl
 import prettypyplot as pplt
-import sys
 import timescaleanalysis.utils as utils
 import timescaleanalysis.plotting as plotting
 import timescaleanalysis.io as io
