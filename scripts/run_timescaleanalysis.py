@@ -126,7 +126,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories()
+    preP.load_trajectories(n_traj_conc=100)
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
@@ -175,6 +175,22 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # Append additional frames for a better convergence of the fit
     tsa.extend_timeTrace()
 
+    scanned_regPara = [100, 300, 400, 500, 600, 700, 800, 1000]
+    for idxObs in range(tsa.data_mean.shape[1]):
+        print(idxObs)
+        P_Bayes = timescaleanalysis.timescales.derive_optimal_regularization(
+            tsa,
+            idxObs,
+            regPara=scanned_regPara,
+            startTime=1e1,
+            sigma=6,
+        )
+        plt.plot(scanned_regPara, P_Bayes, marker='+', ms=2.0, lw=1.3)
+    plt.xscale('symlog', subs=[2,3,4,5,6,7,8,9], linthresh=1e-2)
+    plt.xlabel(r'Regularization parameter $\lambda$')
+    plt.ylabel(r'$P_{\mathrm{Bayes}}(\lambda)$')
+    plotting.save_fig(f'{output_path}/Bayesian_regPara_scan.pdf')
+
     ###########################################################################
     # Perform timescale analysis for each observable and plot the results.
     store_spectrum = []  # list that is filled which the amplitudes
@@ -182,24 +198,26 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         temp_mean = utils.gaussian_smooth(tsa.data_mean[:, idxObs], 6)
         temp_sem = utils.gaussian_smooth(tsa.data_sem[:, idxObs], 6)
         temp_label = tsa.labels[idxObs]
+        # Provide single observable for the TSA class
+        tsa.options['temp_mean'] = temp_mean
+        tsa.options['temp_sem'] = temp_sem
         # It can be helpful to rescale the data to be more sensitive
         # This is especially the case for small distances and angles
 
-        # TODO put into separate function
-        if False:
-            "Scan through several regularization parameters to find the best one"
-            regPara, P_Bayes = tsa.perform_tsa(regPara=[1,3,5,7,10,20,30,40,50,60,70,80,90,100], startTime=1e-10)
-            plt.plot(regPara, P_Bayes, marker='+', ms=2.5, c='k', lw=1.3)
-            plt.xscale('symlog', subs=[2,3,4,5,6,7,8,9], linthresh=1e-10)
-            utils.save_fig(f'{output_path}/Bayesian_regPara_{idxObs}.pdf')
+        # Scan through several regularization parameters to find optimum
+        regPara, P_Bayes = tsa.perform_tsa(
+            regPara=[100, 300, 400, 500, 600, 700, 800, 1000],
+            startTime=1e1
+        )
+        plt.plot(regPara, P_Bayes, marker='+', ms=2.0, c='k', lw=1.3)
+        plt.xscale('symlog', subs=[2,3,4,5,6,7,8,9], linthresh=1e-2)
+        plotting.save_fig(f'{output_path}/Bayesian_regPara_{temp_label}.pdf')
 
-        # Provide single observable to TSA class
-        tsa.options['temp_mean'] = temp_mean
-        tsa.options['temp_sem'] = temp_sem
-        regPara = 200
+        # Performe analysis for single observable
+        regPara = 500
         tsa.perform_tsa(
             regPara=regPara,
-            startTime=1e0,
+            startTime=1e1,
             posVal=False
         )
         ax1, ax2 = plotting.plot_TSA(
@@ -208,7 +226,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             tsa.spectrum,
             tsa.times
         )
-        ax1.set_xlim(1e0, 1e4)
+        ax1.set_xlim(1e2, 1e6)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
         ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix='r')}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')
@@ -279,7 +297,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # In this case, multiple 'timescale_spectra' must be loaded and then can
     # be easily plotted into the same figure with the ax=ax1 parameter.
     ax1 = plotting.plot_dynamical_content(temp_tau_k, temp_dyn_cont)
-    ax1.set_xlim(1e0, 1e4)
+    ax1.set_xlim(1e2, 1e6)
     ax1.set_ylim(0, ax1.get_ylim()[1])
     plotting.save_fig(f'{output_path}/dynamical_content.pdf')
 

@@ -3,6 +3,7 @@ import warnings
 
 import numpy as np
 import json
+import timescaleanalysis.utils as utils
 from numba import jit
 from scipy.optimize import minimize
 
@@ -16,8 +17,7 @@ def derive_tsa_spectrum(
         nR: int,
         lag_rates: np.array,
         initValues: np.array = None,
-        posVal: bool = False,
-        RegParaSearch: bool = False) -> np.array:
+        posVal: bool = False) -> np.array:
     """Perform multi-exponential fit to get spectrum of TSA.
     The fit function has the form: S(t) = SUM s_k exp(-t/tau_k)
     where the amplitudes s_k are fitted for given lag rates (1/tau_k).
@@ -35,15 +35,10 @@ def derive_tsa_spectrum(
     initValues: np.array, entries for initial guess of amplitudes,
                 if None: zeros are used (default: None)
     posVal: bool, set True to only use positive fit amplitudes (default: False)
-    RegParaSearch: bool, set True to perform Bayesian optimization of regPara
-                   (this will return the Bayesian posterior probability),
-                   else return fit result for given regPara (default: False)
 
     Return
     ------
-    (if RegParaSearch=False)
     fit_result: np.array, fitted amplitudes for each lag_rate
-    (if RegParaSearch=True)
     P_Bayes: float, Bayesian posterior probability for given regPara
     """
     # Nonlinear enhancement factor: see doi.org/10.1366/000370205364
@@ -108,11 +103,8 @@ def derive_tsa_spectrum(
         constraints=constraints
     ).x
 
-    if not RegParaSearch:
-        return fit_result
-    else:
-        P_Bayes = N_dof*np.log(regPara) - objective_function(fit_result)
-        return P_Bayes
+    P_Bayes = N_dof*np.log(regPara) - objective_function(fit_result)
+    return fit_result, P_Bayes
 
 
 class TimeScaleAnalysis:
@@ -388,7 +380,7 @@ class TimeScaleAnalysis:
             lag_rates[k] = 1/startTime * 10**((1-k)/10)
 
         if isinstance(regPara, float) or isinstance(regPara, int):
-            temp_fit_amplitudes = derive_tsa_spectrum(
+            temp_fit_amplitudes, _ = derive_tsa_spectrum(
                 np.copy(self.options['temp_mean']),
                 np.copy(self.options['temp_sem']),
                 self.times,
@@ -397,16 +389,13 @@ class TimeScaleAnalysis:
                 nR,
                 lag_rates,
                 initValues=initValues,
-                posVal=posVal,
+                posVal=posVal
             )
         elif isinstance(regPara, np.ndarray) or isinstance(regPara, list):
-            # TODO Separate function with good header
-            print("'ragPara' is list:\n Performing Bayesian search\
-                  for optimal regularization parameter")
             regPara = sorted(regPara)
             P_Bayes_arr = []
             for regParaVal in regPara:
-                temp_P_Bayes = derive_tsa_spectrum(
+                _, temp_P_Bayes = derive_tsa_spectrum(
                     np.copy(self.options['temp_mean']),
                     np.copy(self.options['temp_sem']),
                     self.times,
@@ -415,11 +404,10 @@ class TimeScaleAnalysis:
                     nR,
                     lag_rates,
                     initValues=initValues,
-                    posVal=posVal,
-                    RegParaSearch=True,
+                    posVal=posVal
                 )
                 P_Bayes_arr.append(temp_P_Bayes)
-            exp_P_Bayes = np.exp(P_Bayes_arr/(np.abs(np.amax(P_Bayes_arr))/10))
+            exp_P_Bayes = np.exp(P_Bayes_arr/(utils.absmax(P_Bayes_arr)/10))
             return regPara, exp_P_Bayes/np.amax(exp_P_Bayes)
         else:
             raise TypeError(
@@ -429,3 +417,47 @@ class TimeScaleAnalysis:
         self.spectrum = np.zeros((2, nR), dtype=np.float32).T
         self.spectrum[:, 1] = temp_fit_amplitudes
         self.spectrum[1:, 0] = 1.0/lag_rates[1:]
+
+
+def derive_optimal_regularization(
+        tsa: TimeScaleAnalysis,
+        idxObs: int,
+        regPara: float | list,
+        startTime: float = 1e0,
+        sigma: float = None,
+        posVal: bool = False):
+    """Derive the optimal regularization parameter for the TSA
+    TODO: Describe Bayes posterior probability and why/how it is used here
+
+    Parameters
+    ----------
+    tsa: TimeScaleAnalysis object, contains all data for TSA fit
+    idxObs: int, index of observable in TimeScaleAnalysis
+    regPara: np.array or list, regularization parameter values to scan
+    startTime: float, first timescale used in fit (default: 1e0)
+    sigma: float, sigma for Gaussian smoothing of data before fit
+           (default: None)
+    posVal: bool, set True to only use positive fit amplitudes (default: False)
+
+    Return
+    ------
+    Bayes_probabilities: np.arrays,
+            Bayesian probabilities for the given 'regPara' values
+    """
+    if sigma:
+        temp_mean = utils.gaussian_smooth(tsa.data_mean[:, idxObs], sigma)
+        temp_sem = utils.gaussian_smooth(tsa.data_sem[:, idxObs], sigma)
+    else:
+        temp_mean = tsa.data_mean[:, idxObs]
+        temp_sem = tsa.data_sem[:, idxObs]
+    # Provide single observable for the TSA class
+    tsa.options['temp_mean'] = temp_mean
+    tsa.options['temp_sem'] = temp_sem
+
+    # Scan through several regularization parameters to find optimum
+    regPara, P_Bayes = tsa.perform_tsa(
+        regPara=regPara,
+        startTime=startTime,
+        posVal=posVal
+    )
+    return P_Bayes
