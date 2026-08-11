@@ -427,7 +427,10 @@ def derive_optimal_regularization(
         sigma: float = None,
         posVal: bool = False):
     """Derive the optimal regularization parameter for the TSA
-    TODO: Describe Bayes posterior probability and why/how it is used here
+    The optimal value is said to be where the Bayesian posterior probability
+    has its maximum. (see doi: 10.1366/000370207779701460)
+    This so-called Bayes criterion, prevents overfitting while maximizing
+    the fit precision/resolution.
 
     Parameters
     ----------

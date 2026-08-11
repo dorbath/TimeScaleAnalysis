@@ -126,7 +126,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         label_file=label_file
     )
     preP.generate_input_trajectories()
-    preP.load_trajectories(n_traj_conc=100)
+    preP.load_trajectories()
     preP.get_time_array()
     preP.save_preprocessed_data(output_path=output_path)
     ###########################################################################
@@ -142,7 +142,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     )
     for i in range(len(heatmaps[2])):
         plotting.plot_2D_histogram(heatmaps[0], heatmaps[1], heatmaps[2][i])
-        plt.xlim(1e2, 1e6)
+        plt.xlim(1e0, 1e4)
         plotting.save_fig(f'{output_path}/time_dependent_distribution_{i}.pdf')
     ###########################################################################
 
@@ -175,17 +175,16 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # Append additional frames for a better convergence of the fit
     tsa.extend_timeTrace()
 
-    scanned_regPara = [100, 300, 400, 500, 600, 700, 800, 1000]
-    for idxObs in range(tsa.data_mean.shape[1]):
-        print(idxObs)
-        P_Bayes = timescaleanalysis.timescales.derive_optimal_regularization(
-            tsa,
-            idxObs,
-            regPara=scanned_regPara,
-            startTime=1e1,
-            sigma=6,
-        )
-        plt.plot(scanned_regPara, P_Bayes, marker='+', ms=2.0, lw=1.3)
+    # Run regularization parameter scan for a single observable
+    scanned_regPara = [1, 5, 10, 50, 100, 500, 1000]
+    P_Bayes = timescaleanalysis.timescales.derive_optimal_regularization(
+        tsa,
+        0,
+        regPara=scanned_regPara,
+        startTime=1e0,
+        sigma=6,
+    )
+    plt.plot(scanned_regPara, P_Bayes, marker='+', ms=2.0, lw=1.3)
     plt.xscale('symlog', subs=[2,3,4,5,6,7,8,9], linthresh=1e-2)
     plt.xlabel(r'Regularization parameter $\lambda$')
     plt.ylabel(r'$P_{\mathrm{Bayes}}(\lambda)$')
@@ -204,20 +203,11 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         # It can be helpful to rescale the data to be more sensitive
         # This is especially the case for small distances and angles
 
-        # Scan through several regularization parameters to find optimum
-        regPara, P_Bayes = tsa.perform_tsa(
-            regPara=[100, 300, 400, 500, 600, 700, 800, 1000],
-            startTime=1e1
-        )
-        plt.plot(regPara, P_Bayes, marker='+', ms=2.0, c='k', lw=1.3)
-        plt.xscale('symlog', subs=[2,3,4,5,6,7,8,9], linthresh=1e-2)
-        plotting.save_fig(f'{output_path}/Bayesian_regPara_{temp_label}.pdf')
-
         # Performe analysis for single observable
-        regPara = 500
+        regPara = 200
         tsa.perform_tsa(
             regPara=regPara,
-            startTime=1e1,
+            startTime=1e0,
             posVal=False
         )
         ax1, ax2 = plotting.plot_TSA(
@@ -226,7 +216,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             tsa.spectrum,
             tsa.times
         )
-        ax1.set_xlim(1e2, 1e6)
+        ax1.set_xlim(1e0, 1e4)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
         ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix='r')}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')
@@ -297,7 +287,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     # In this case, multiple 'timescale_spectra' must be loaded and then can
     # be easily plotted into the same figure with the ax=ax1 parameter.
     ax1 = plotting.plot_dynamical_content(temp_tau_k, temp_dyn_cont)
-    ax1.set_xlim(1e2, 1e6)
+    ax1.set_xlim(1e0, 1e4)
     ax1.set_ylim(0, ax1.get_ylim()[1])
     plotting.save_fig(f'{output_path}/dynamical_content.pdf')
 

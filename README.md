@@ -30,7 +30,7 @@ preP.save_preprocessed_data()
 # Perform analysis for each observable over 'fit_n_decades' decades
 tsa = timescaleanalysis.TimeScaleAnalysis(preP.data_dir, fit_n_decades)
 tsa.load_data()
-for i in range(tsa.data_arr.shape[1]):
+for i in range(tsa.data_mean.shape[1]):
   tsa.options['temp_mean'] = tsa.data_mean[:, i]
   tsa.options['temp_sem'] = tsa.data_sem[:, i]
   tsa.perform_tsa(

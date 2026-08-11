@@ -52,7 +52,7 @@ plotting._color_cycle()
     'label_file',
     type=click.STRING,
     default=None,
-    help='mdp file used to simulate the trajectories',
+    help='file that maps labels to each observable',
 )
 @click.option(
     '--number-decades',
