@@ -54,7 +54,7 @@ class Preprocessing:
         All files that fulfill data_path* are taken as input files.
         """
         self.input_directories = [
-            Path(inDir) for inDir in glob.glob(f'{self.data_dir}*')
+            Path(inDir) for inDir in sorted(glob.glob(f'{self.data_dir}*'))
         ]
 
     def load_absorption_spectra(self) -> None:

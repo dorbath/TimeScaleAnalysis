@@ -39,7 +39,7 @@ def generate_input_trajectories(
     folder_prefix: str, path to folder with trajectories
     input_directories: list of str, list of files with trajectories
     """
-    return [Path(inDir) for inDir in glob.glob(f'{file_dir}*')]
+    return [Path(inDir) for inDir in sorted(glob.glob(f'{file_dir}*'))]
 
 
 def derive_dynamical_content(
