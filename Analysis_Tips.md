@@ -9,16 +9,16 @@ First, the multi-exponential fit has some tricky regions that need special care.
 
 At the lower and upper boundary the fit will 'suddenly' have no more data points
 to adjust to, which can result in a divergence of the fit or strong oscialltions.
-As these regions are usually of no interest and cut-off it is only important to
-ensure that it does not affect the amplitudes within the range of interest.
+As these regions are usually of no interest and cut-off, it is only important to
+ensure that this does not affect the amplitudes within the range of interest.
 
-For the lower boundary it is recommended to put the initial fit amplitude
+For the *lower boundary* it is recommended to put the initial fit amplitude
 close to the first available data point.
 Note, in case your averaged data starts from the exact same spot, the initial frame
 will have a vanishing standard deviation and therefore the analysis is forced to
 match this point almost perfectly resulting in large amplitudes.
 
-In case of the upper boundary, it is sufficient to use the `tsa.extend_timeTrace()`
+In case of the *upper boundary*, it is sufficient to use the `tsa.extend_timeTrace()`
 function which appends an additional order of magnitude allowing for a better
 convergence than an sudden end. The extended value is typically derived as average
 over some fraction of the final decade, which for highly non-converged data might
@@ -36,6 +36,8 @@ tsa.options['temp_sem'] *= scaling_factor
 ...
 tsa.spectrum[:, 1] /= scaling_factor
 ```
+Note, the rescaling of the spectrum is only required if you want to get back to the
+initial data (instead of the rescaled one).
 This will require to adjust the regularization parameter, however, the imporved
 precision allows for a much better dynamical resolution.
 
@@ -43,26 +45,34 @@ precision allows for a much better dynamical resolution.
 
 Even for a very good data preparation and choice of regularization, there is still
 the possibility for fit artifacts.
-1) In case of rapid increase/decreases, the meaningful peak is adjointed by
+1) In case of *rapid increase/decreases of the data*,
+    the meaningful peak of said dynamic is adjointed by
     another peak of opposite sign. This allows for a more precise match of the
     data, but you must be aware that the secondary peak is not physical.
-2) For constant data values, the fit might osciallate between positive and
+2) For data *features* that are *over long stretches constant*,
+    the fit might osciallate between positive and
     negative values. Most often these amplitudes remain very small and thus can be
     ignored, however, it can occur that they become significant or might add up.
+    If possible, increase the regularization parameter slightly.
+    In case you have monotonically rising/falling features, you can apply additionaly
+    require all amplitudes to be of same sign, suppressing these oscillations.
 3) While `timescaleanalysis.timescales.derive_optimal_regularization()` provides
     a way to derive an 'optimal' regularization parameter, you might be interested
     in a highly resolved timescale and thus reduce the derived value. This will
     induce typical over-fitting artifacts (more/small unphysical peaks, shift of
-    their position, splitting of timescales). Be careful and verify your analysis.
-    The easiest signs are secondary peaks of opposite sign (as in point 1) and
-    timescales at positions at which the data is not matching it. 
+    their position, splitting of timescales). *Be careful and verify your analysis.*
+    The clearest signs of over-fitting are secondary peaks of opposite sign
+    (as in point 1) and timescales at positions at which the data is not
+    matching it.
+    Alternatively, for under-fitting your multi-exponential fit will miss clear
+    dynamics and follow the data only roughly.
 
 ## Compuational speed up of timescale fit
 
 ### Parallelization
 
-For data of many observables/features ($>100$),e.g., all C$_\alpha$ distances of a
-protein, it is recommended to parallelize the timescale analysis fit.
+For data of many observables/features ($>100$), e.g., all Ca distances of a
+protein, it is recommended to *parallelize the timescale analysis fit*.
 You can use for instance `joblib` and wrap the for loop into a separate function as:
 ```python
 from joblib import Parallel, delayed
@@ -81,9 +91,10 @@ resulting_spectrum = Parallel(n_jobs=-1)(
 ### Reduction of frames
 
 Alternatively, and especially for very large number of features ($>500$) it is
-recommended to decrease the number of frames on the logarithmic scale.
+recommended to *decrease the number of frames on the logarithmic scale*.
 In such a case it is better apply the filter prior to the log-spacing in order to
-retain as much information as possible. The reduced number of frames (factor of 10)
+retain as much information as possible, i.e., from the frames that are removed.
+The reduced number of frames (usually a factor of 10)
 significantly speeds up the fit. Note that you will have to adjust the
 regularization parameter to smaller values, roughly by the same factor as you
 reduced the number of frames.
