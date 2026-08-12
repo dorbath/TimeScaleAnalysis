@@ -62,8 +62,8 @@ def save_json(output_dic: dict,
     output_file: str, path to saved json file
     """
     if isfile(f'{output_path}/{output_file}.json'):
-        print((f"Output file {output_path}/{output_file}.json already exists! "
-               "Adjusting output file!"))
+        print(f"Output file {output_path}/{output_file}.json already exists! "
+               "Adjusting output file!")
 
     # Make sure no file is overwritten
     safety_file = output_path+'/'+output_file

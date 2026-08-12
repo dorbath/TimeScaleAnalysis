@@ -12,13 +12,13 @@ to adjust to, which can result in a divergence of the fit or strong oscialltions
 As these regions are usually of no interest and cut-off, it is only important to
 ensure that this does not affect the amplitudes within the range of interest.
 
-For the *lower boundary* it is recommended to put the initial fit amplitude
+For the **lower boundary** it is recommended to put the initial fit amplitude
 close to the first available data point.
 Note, in case your averaged data starts from the exact same spot, the initial frame
 will have a vanishing standard deviation and therefore the analysis is forced to
 match this point almost perfectly resulting in large amplitudes.
 
-In case of the *upper boundary*, it is sufficient to use the `tsa.extend_timeTrace()`
+In case of the **upper boundary**, it is sufficient to use the `tsa.extend_timeTrace()`
 function which appends an additional order of magnitude allowing for a better
 convergence than an sudden end. The extended value is typically derived as average
 over some fraction of the final decade, which for highly non-converged data might
@@ -45,11 +45,11 @@ precision allows for a much better dynamical resolution.
 
 Even for a very good data preparation and choice of regularization, there is still
 the possibility for fit artifacts.
-1) In case of *rapid increase/decreases of the data*,
+1) In case of **rapid increase/decreases of the data**,
     the meaningful peak of said dynamic is adjointed by
     another peak of opposite sign. This allows for a more precise match of the
     data, but you must be aware that the secondary peak is not physical.
-2) For data *features* that are *over long stretches constant*,
+2) For data **features** that are **over long stretches constant**,
     the fit might osciallate between positive and
     negative values. Most often these amplitudes remain very small and thus can be
     ignored, however, it can occur that they become significant or might add up.
@@ -60,19 +60,33 @@ the possibility for fit artifacts.
     a way to derive an 'optimal' regularization parameter, you might be interested
     in a highly resolved timescale and thus reduce the derived value. This will
     induce typical over-fitting artifacts (more/small unphysical peaks, shift of
-    their position, splitting of timescales). *Be careful and verify your analysis.*
+    their position, splitting of timescales). **Be careful and verify your analysis.**
     The clearest signs of over-fitting are secondary peaks of opposite sign
     (as in point 1) and timescales at positions at which the data is not
     matching it.
     Alternatively, for under-fitting your multi-exponential fit will miss clear
     dynamics and follow the data only roughly.
 
+### Number of fit amplitudes
+
+In case you want to achieve a higher temporal resolution of each timescale, it might seem
+intuitive to increase the number of amplitudes $a_{ij}$ in each order of magnitude.
+However, this does 1) increase significantly the computational cost and 2) does
+barely if at all improve the resolution (your maximum will be more precise but the
+width remains similar).
+
+You can decrease the number of amplitudes (to 5 per decade) if you only want a rough
+estimation as it will speed up the derivations a lot. However, the temporal
+resolution will suffer. 
+
+
+
 ## Compuational speed up of timescale fit
 
 ### Parallelization
 
 For data of many observables/features ($>100$), e.g., all Ca distances of a
-protein, it is recommended to *parallelize the timescale analysis fit*.
+protein, it is recommended to **parallelize the timescale analysis fit**.
 You can use for instance `joblib` and wrap the for loop into a separate function as:
 ```python
 from joblib import Parallel, delayed
@@ -91,7 +105,7 @@ resulting_spectrum = Parallel(n_jobs=-1)(
 ### Reduction of frames
 
 Alternatively, and especially for very large number of features ($>500$) it is
-recommended to *decrease the number of frames on the logarithmic scale*.
+recommended to **decrease the number of frames on the logarithmic scale**.
 In such a case it is better apply the filter prior to the log-spacing in order to
 retain as much information as possible, i.e., from the frames that are removed.
 The reduced number of frames (usually a factor of 10)

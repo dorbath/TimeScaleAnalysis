@@ -9,7 +9,38 @@ def plot_TSA(
         data_sem: np.array,
         spectrum: np.array,
         times: np.array) -> tuple:
-    """Plot for each observable the averaged time trace and timescale spectrum"""
+    """Plot for single observable the averaged time trace, the
+    corresponding standard error of the mean and timescale spectrum
+    obtained from the timescale analysis.
+    
+    Parameters
+    ----------
+    data_mean: np.array, mean values of the time trace used for TSA fit
+    data_sem: np.array, standard error of the mean values of the time trace
+    spectrum: np.array, timescale spectrum with
+            1st column: times tau_k
+            2nd column: amplitudes s_n of observable
+    times: np.array, log-spaced times
+    """
+    if spectrum.ndim != 2 or spectrum.shape[1] < 2:
+        raise ValueError(
+            "Spectrum must have at least two columns: "
+            "1st column: times tau_k, "
+            "2nd column: amplitudes s_n for each observable"
+        )
+    if times.ndim != 1:
+        raise ValueError("Time array must be a 1D array.")
+    if data_mean.shape != data_sem.shape:
+        raise ValueError(
+            "Mean and SEM arrays must have the same shape. "
+            f"Got {data_mean.shape} and {data_sem.shape}."
+        )
+    if data_mean.shape[0] != times.shape[0]:
+        raise ValueError(
+            "Mean and SEM arrays must have the same length as the time array. "
+            f"Got {data_mean.shape[0]} and {times.shape[0]}."
+        )
+
     n_steps = len(times)
     upper_bound = np.add(data_mean, data_sem)
     lower_bound = np.subtract(data_mean, data_sem)
@@ -24,13 +55,13 @@ def plot_TSA(
     fig, ax1 = plt.subplots()
     ax1.fill_between(times, lower_bound, upper_bound,
                      lw=0, color='k', alpha=0.4)
-    ax1.plot(times, data_mean, marker='.', ms=0, lw=1.3, color='k')
-    ax1.plot(times, laplace_trafo, marker='.', ms=0, lw=1.0, color='tab:red')
+    ax1.plot(times, data_mean, marker='.', ms=0, lw=1.3, color='k', label='data')
+    ax1.plot(times, laplace_trafo, marker='.', ms=0, lw=1.0, color='tab:red', label='TSA fit')
 
     # ax2 shows the amplitude spectrum
     ax2 = ax1.twinx()
     ax2.plot(spectrum[1:, 0], -spectrum[1:, 1],
-             marker='.', color='tab:blue', ms=2.5, lw=0.5, ls='--')
+             marker='.', color='tab:blue', ms=2.5, lw=0.5, ls='--', label='TSA spectrum')
     ax2.tick_params(axis='y', colors='tab:blue')
     ax2.yaxis.label.set_color('tab:blue')
     ax2.hlines(0, ax1.get_xlim()[0], ax1.get_xlim()[1],
@@ -40,6 +71,7 @@ def plot_TSA(
     ax1.grid(False, axis='y')
     ax2.grid(False)
     ax2.set_yticks([])
+    pplt.legend(outside='top', axs=[ax1, ax2], ax=ax1, fontsize=6)
     return ax1, ax2
 
 

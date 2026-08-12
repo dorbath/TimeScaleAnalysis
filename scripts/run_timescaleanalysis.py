@@ -22,6 +22,8 @@ import timescaleanalysis.supplementary_analyses as suppAna
 import timescaleanalysis
 import click
 
+import json as json
+
 pplt.use_style(colors='cbf8', cmap='macaw_r')
 rc_fonts = {'figure.figsize': (plt.rcParams['figure.figsize'][0]*2/3,
                                plt.rcParams['figure.figsize'][1]*2/3),
@@ -108,9 +110,10 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
     ###########################################################################
     # Generate multi-exponential time traces with perfectly known
     # timescales, amplitudes.
+        #'tutorial/Tutorial_multiExp.json',
     utils.generate_multi_exp_timetrace(
-        'tutorial/Tutorial_multiExp.json',
-        output_path='.',
+        'scripts/example_json_1Observable.json',
+        output_path='temp_test_files/',
         output_file='multi_exp_function_example.txt'
     )
     ###########################################################################
@@ -204,15 +207,16 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         # This is especially the case for small distances and angles
 
         # Performe analysis for single observable
-        regPara = 200
+        regPara = 200.
         tsa.perform_tsa(
             regPara=regPara,
             startTime=1e0,
             posVal=False
         )
+        # Plot time trace and timescale spectrum for single observable
         ax1, ax2 = plotting.plot_TSA(
-            temp_mean,
-            temp_sem,
+            tsa.options['temp_mean'],
+            tsa.options['temp_sem'],
             tsa.spectrum,
             tsa.times
         )

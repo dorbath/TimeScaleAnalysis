@@ -3,11 +3,12 @@
 """
 
 import timescaleanalysis
+from timescaleanalysis.timescales import derive_tsa_spectrum
 
 import numpy as np
-import pytest
 from pathlib import Path
 import json as json
+import pytest
 
 TEST_TRAJ = Path(__file__).parent / 'test_data/test_trajectories'
 TEST_DATA = Path(__file__).parent / 'test_data'
@@ -133,7 +134,8 @@ def test_log_space_data(
     tsa.times = np.arange(lin_shape[0])
     tsa.n_steps = lin_shape[0]
     tsa.log_space_data(target_n_steps=5000)
-    assert tsa.data_mean.shape == log_result
+    assert tsa.data_mean.shape == log_result,\
+        f"Expected shape {log_result}, got {tsa.data_mean.shape}"
 
 
 # Test function for timescales.extend_timeTrace
@@ -157,10 +159,64 @@ def test_extend_timeTrace(
     tsa.data_sem = np.zeros(initial_shape)
     tsa.times = np.arange(initial_shape[0])
     tsa.extend_timeTrace()
-    assert tsa.data_mean.shape == extended_result
+    assert tsa.data_mean.shape == extended_result,\
+        f"Expected shape {extended_result}, got {tsa.data_mean.shape}"
 
 
 # Test function for timescales.perform_tsa
+@pytest.mark.parametrize(
+    'input_json, regPara, result_spectrum, error', [
+        (
+            TEST_DATA/'test_tsa_spectrum/test_input_3Observables_Obs1.json',
+            1000.,
+            TEST_DATA/'test_tsa_spectrum/test_spectra_3Observables_Obs1.txt',
+            None
+        ),
+        (
+            TEST_DATA/'test_tsa_spectrum/test_input_3Observables_Obs1.json',
+            None,
+            TEST_DATA/'test_tsa_spectrum/test_spectra_3Observables_Obs1.txt',
+            TypeError
+        ),
+        (
+            TEST_DATA/'test_tsa_spectrum/test_input_3Observables_Obs1.json',
+            [1000., None, 'string'],
+            TEST_DATA/'test_tsa_spectrum/test_spectra_3Observables_Obs1.txt',
+            TypeError
+        )
+    ]
+)
+def test_perform_tsa(
+        input_json,
+        regPara,
+        result_spectrum,
+        error):
+    tsa = timescaleanalysis.TimeScaleAnalysis(TEST_TRAJ, 1)
+    with open(input_json, 'r') as f:
+        input_dict = json.load(f)
+    tsa.options['temp_mean'] = np.array(input_dict['data_mean'])
+    tsa.options['temp_sem'] = np.array(input_dict['data_sem'])
+    tsa.times = np.array(input_dict['times'])
+    tsa.n_steps = len(tsa.times)
+    tsa.fit_n_decades = input_dict['fit_n_decades']
+
+    if not error:
+        tsa.perform_tsa(
+            regPara=regPara,
+            startTime=1e-1,
+            posVal=input_dict['posVal'])
+        np.testing.assert_allclose(
+            tsa.spectrum, np.loadtxt(result_spectrum),
+            rtol=3e-2,
+        )
+    else:
+        with pytest.raises(error):
+            tsa.perform_tsa(
+                regPara=regPara,
+                startTime=1e-1,
+                posVal=input_dict['posVal'])
+
+# Test function for derive_tsa_spectrum
 @pytest.mark.parametrize(
     'input_json, result_spectrum', [
         (
@@ -169,7 +225,7 @@ def test_extend_timeTrace(
         )
     ]
 )
-def test_perform_tsa(
+def test_derive_tsa_spectrum(
         input_json,
         result_spectrum):
     tsa = timescaleanalysis.TimeScaleAnalysis(TEST_TRAJ, 1)
@@ -182,11 +238,69 @@ def test_perform_tsa(
     tsa.fit_n_decades = input_dict['fit_n_decades']
     regPara = input_dict['regPara']
 
-    tsa.perform_tsa(
-        regPara=regPara,
-        startTime=1e-1,
+    # Setup fit parameters
+    nR = tsa.fit_n_decades*10 + 1  # number of fit amplitudes
+    lag_rates = np.zeros(nR, dtype=np.float64)
+    for k in range(1, nR):
+        lag_rates[k] = 1/1e-1 * 10**((1-k)/10)
+
+    temp_spectrum, P_Bayes = derive_tsa_spectrum(
+        tsa.options['temp_mean'],
+        tsa.options['temp_sem'],
+        tsa.times,
+        tsa.n_steps,
+        regPara,
+        nR,
+        lag_rates,
         posVal=input_dict['posVal'])
+
+    assert temp_spectrum.shape == (nR, ),\
+        f"Expected shape {(nR, )}, got {temp_spectrum.shape}"
+    assert isinstance(P_Bayes, float),\
+        f"Expected type float, got {type(P_Bayes)}"
     np.testing.assert_allclose(
-        tsa.spectrum, np.loadtxt(result_spectrum),
+        temp_spectrum, np.loadtxt(result_spectrum)[:, 1],
         rtol=3e-2,
     )
+
+@pytest.mark.parametrize(
+    'input_json', [
+        (
+            TEST_DATA/'test_tsa_spectrum/test_input_3Observables_Obs1.json'
+        )
+    ]
+)
+def test_derive_tsa_spectrum_posVal_constraint(
+        input_json):
+    tsa = timescaleanalysis.TimeScaleAnalysis(TEST_TRAJ, 1)
+    with open(input_json, 'r') as f:
+        input_dict = json.load(f)
+    tsa.options['temp_mean'] = np.array(input_dict['data_mean'])
+    tsa.options['temp_sem'] = np.array(input_dict['data_sem'])
+    tsa.times = np.array(input_dict['times'])
+    tsa.n_steps = len(tsa.times)
+    tsa.fit_n_decades = input_dict['fit_n_decades']
+    regPara = input_dict['regPara']
+
+    # Setup fit parameters
+    nR = tsa.fit_n_decades*10 + 1  # number of fit amplitudes
+    lag_rates = np.zeros(nR, dtype=np.float64)
+    for k in range(1, nR):
+        lag_rates[k] = 1/1e-1 * 10**((1-k)/10)
+
+    temp_spectrum, P_Bayes = derive_tsa_spectrum(
+        tsa.options['temp_mean'],
+        tsa.options['temp_sem'],
+        tsa.times,
+        tsa.n_steps,
+        regPara,
+        nR,
+        lag_rates,
+        posVal=True)
+
+    assert temp_spectrum.shape == (nR, ),\
+        f"Expected shape {(nR, )}, got {temp_spectrum.shape}"
+    assert isinstance(P_Bayes, float),\
+        f"Expected type float, got {type(P_Bayes)}"
+    assert np.all(temp_spectrum[1:] <= 1e-6),\
+        "Expected all values to be non-negative due to posVal constraint"

@@ -208,7 +208,7 @@ class TimeScaleAnalysis:
         with open(self.data_file) as f:
             data_json = json.load(f)
         for key in ['data_mean', 'data_sem', 'times', 'labels']:
-            if key not in data_json.keys():
+            if key not in data_json:
                 raise KeyError(f"Expected data file to contain '{key}' key!")
         self.data_mean = np.array(data_json['data_mean'], dtype=np.float32)
         self.data_sem = np.array(data_json['data_sem'], dtype=np.float32)
@@ -379,7 +379,7 @@ class TimeScaleAnalysis:
         for k in range(1, nR):
             lag_rates[k] = 1/startTime * 10**((1-k)/10)
 
-        if isinstance(regPara, float) or isinstance(regPara, int):
+        if isinstance(regPara, (float, int)):
             temp_fit_amplitudes, _ = derive_tsa_spectrum(
                 np.copy(self.options['temp_mean']),
                 np.copy(self.options['temp_sem']),
@@ -391,10 +391,15 @@ class TimeScaleAnalysis:
                 initValues=initValues,
                 posVal=posVal
             )
-        elif isinstance(regPara, np.ndarray) or isinstance(regPara, list):
+        elif isinstance(regPara, (np.ndarray, list)):
             regPara = sorted(regPara)
             P_Bayes_arr = []
             for regParaVal in regPara:
+                if not isinstance(regParaVal, (float, int)):
+                    raise TypeError(
+                    f'Expected regPara in array/list to be float/int, '
+                    f'but got {type(regPara)}'
+                )
                 _, temp_P_Bayes = derive_tsa_spectrum(
                     np.copy(self.options['temp_mean']),
                     np.copy(self.options['temp_sem']),

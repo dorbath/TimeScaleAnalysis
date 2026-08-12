@@ -105,9 +105,10 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             startTime=1e-1,
             posVal=False
         )
+        # Plot time trace and timescale spectrum for single observable
         ax1, ax2 = plotting.plot_TSA(
-            temp_mean,
-            temp_sem,
+            tsa.options['temp_mean'],
+            tsa.options['temp_sem'],
             tsa.spectrum,
             tsa.times
         )

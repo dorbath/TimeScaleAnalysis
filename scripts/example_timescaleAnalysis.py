@@ -85,14 +85,14 @@ def main(data_path, fit_n_decades, output_path):
             posVal=False
         )
         ax1, ax2 = plotting.plot_TSA(
-            temp_mean,
-            temp_sem,
+            tsa.options['temp_mean'],
+            tsa.options['temp_sem'],
             tsa.spectrum,
             tsa.times
         )
         ax1.set_xlim(1e-1, 1e5)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
-        ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix='r')}(t)')
+        ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix="r")}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')
 
         store_time = tsa.spectrum[:, 0]
