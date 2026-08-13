@@ -476,7 +476,7 @@ def derive_optimal_regularization(
     tsa: TimeScaleAnalysis object,
         contains all data for TSA fit
     idxObs: int,
-        index of observable in TimeScaleAnalysis
+        index of scanned observable/feature in TimeScaleAnalysis
     regPara: np.array or list,
         regularization parameter values to scan
     startTime: float, default=1.0

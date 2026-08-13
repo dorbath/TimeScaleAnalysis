@@ -341,7 +341,15 @@ class Preprocessing:
             )
 
     def get_time_array(self) -> None:
-        """Derive time array for the data"""
+        """Derive time array for the data
+        
+        Note: if more convenient for you (e.g. no existing .mdp file)
+        you can also just set your time array manually as
+        `self.options['times'] = np.arange(
+            0, self.n_steps, 1, dtype=np.float64)*dt`
+        with a dt as you like it or overwrite the argument in any other way.
+        However, you must ensure the it length matches your data!
+        """
         def _load_simulation_parameters() -> None:
             """Get simulaitons parameters from .mdp file and create time array
             Be aware of the used units in the file (usually dt is given in ps)

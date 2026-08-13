@@ -4,6 +4,7 @@
 
 import timescaleanalysis
 from timescaleanalysis.timescales import derive_tsa_spectrum
+from timescaleanalysis.timescales import derive_optimal_regularization
 
 import numpy as np
 from pathlib import Path
@@ -304,3 +305,43 @@ def test_derive_tsa_spectrum_posVal_constraint(
         f"Expected type float, got {type(P_Bayes)}"
     assert np.all(temp_spectrum[1:] <= 1e-6),\
         "Expected all values to be non-negative due to posVal constraint"
+
+
+
+# Test function for timescales.perform_tsa
+@pytest.mark.parametrize(
+    'input_json, regPara', [
+        (
+            TEST_DATA/'test_tsa_spectrum/test_input_3Observables_Obs1.json',
+            [1000.],
+        ),
+        (
+            TEST_DATA/'test_tsa_spectrum/test_input_3Observables_Obs1.json',
+            [1000., 2000., 3000.],
+        )
+    ]
+)
+def test_derive_optimal_regularization(
+        input_json,
+        regPara):
+    tsa = timescaleanalysis.TimeScaleAnalysis(TEST_TRAJ, 1)
+    with open(input_json, 'r') as f:
+        input_dict = json.load(f)
+    tsa.data_mean = np.array(input_dict['data_mean'])[:, None]
+    tsa.data_sem = np.array(input_dict['data_sem'])[:, None]
+    tsa.times = np.array(input_dict['times'])
+    tsa.n_steps = len(tsa.times)
+    tsa.fit_n_decades = input_dict['fit_n_decades']
+
+    P_Bayes = derive_optimal_regularization(
+        tsa,
+        0,
+        regPara=regPara,
+        startTime=1e-1,
+        posVal=input_dict['posVal'])
+    assert isinstance(P_Bayes, (list, np.ndarray, float)),\
+        f"Expected type list, np.array or float, got {type(P_Bayes)}"
+    assert np.all(np.array(P_Bayes) >= 0),\
+        "Expected all values to be non-negative"
+    assert len(P_Bayes) == len(regPara),\
+        f"Expected length {len(regPara)}, got {len(P_Bayes)}"
