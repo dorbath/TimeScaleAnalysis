@@ -14,13 +14,16 @@ def gaussian_smooth(
 
     Parameters
     ----------
-    data: np.array (1D), data to be smoothed
-    sigma: float, standard deviation for Gaussian kernel
-    mode: str, behavior at the boundaries of the array
+    data: np.array (1D),
+        Data to be smoothed
+    sigma: float,
+        Standard deviation for Gaussian kernel
+    mode: str,
+        Behavior at the boundaries of the array
 
     Return
     ------
-    smoothed data as np.array
+    Smoothed data as np.array
     """
     return gaussian_filter1d(data, sigma, mode=mode)
 
@@ -32,12 +35,15 @@ def generate_input_trajectories(
 
     Parameters
     ----------
-    file_dir: str, path to file or folder with trajectories
+    file_dir: str,
+        Path to file or folder with trajectories
 
     Return
     ------
-    folder_prefix: str, path to folder with trajectories
-    input_directories: list of str, list of files with trajectories
+    folder_prefix: str,
+        Path to folder with trajectories
+    input_directories: list of str,
+        List of files with trajectories
     """
     return [Path(inDir) for inDir in sorted(glob.glob(f'{file_dir}*'))]
 
@@ -50,14 +56,17 @@ def derive_dynamical_content(
 
     Parameters
     ----------
-    spectrum: np.array, timescale spectrum with
-            1st column: times tau_k
-            All other columns: amplitues s_n for each observable
+    spectrum: np.array,
+        Timescale spectrum with
+        1st column: times tau_k
+        All other columns: amplitues s_n for each observable
 
     Return
     ------
-    tau_k: np.array, times corresponding to the timescale spectrum
-    dynamic_content: np.array, dynamical content D(tau_k)
+    tau_k: np.array,
+        Times corresponding to the timescale spectrum
+    dynamic_content: np.array,
+        Dynamical content D(tau_k) derived from the individual spectra
     """
     # The first entry is removed as it corresponds to an offset that
     # does not contribute to the dynamics
@@ -79,81 +88,56 @@ def absmax(
 
     Parameters
     ----------
-    data: np.array, input data
-    axis: int, axis along which to compute the maximum (default: None)
+    data: np.array,
+        Input data
+    axis: int, default=None
+        Axis along which to compute the maximum
 
     Return
     ------
-    absmax_data: np.array, maximum of the absolute values along 'axis'
+    absmax_data: np.array,
+        Maximum of the absolute values along 'axis'
     """
     return np.amax(np.abs(data), axis=axis)
-
-
-def calculate_ensemble_average_change(data, abs_val=True):
-    """Derive the ensemble average change of a given set of distances (e.g. a cluster)
-
-    Parameters
-    ----------
-    data: np.array, data which is used to derive ensemble average change of specific column
-    column_name: str, define the name of the column
-    n_steps: int, number of steps in data
-    abs_val: boolean, selects if absolute difference is derived (default:True)
-
-    Return
-    ------
-    ensemble_averaged_change: np.array, time trace of averaged change
-    ensemble_averaged_error: np.array, time trace of corresponding standard deviation
-    """
-
-    def _derive_ensemble_averaged_change(time_trace, abs_val=False):
-        time_trace_change = time_trace - time_trace[0]
-        return time_trace_change if not abs_val else np.abs(time_trace_change)
-
-    # Derive ensemble averaged change
-    # Delta d(t) = <d(t) - d(0)>, with d(t)=1/M sum |d_ij(t)| or d(t)=1/M |sum d_ij(t)|
-    # Interpretation: derive d(t)-d(0) for each distance and sum them (or sum|X|)
-    if data.ndim != 1:
-        # Averaging already performed (second column is var/std)
-        mean_data = data[:, 0]
-    else:
-        mean_data = data
-    temp_averaged_change = _derive_ensemble_averaged_change(mean_data, abs_val=abs_val)
-
-    return temp_averaged_change
 
 
 def generate_multi_exp_timetrace(
         in_json_file: str,
         output_path: str = None,
-        output_file: str = None) -> np.array:
+        output_file: str = 'multi_exp_function_example.txt') -> np.array:
     """Derive a time trace from a preset timescale spectrum
     via a multi-exponential function:
         S(t) = s_0-sum_{k=1,K} s_k e^{-t/tau_k}
     with amplitude s_k and timescales tau_k.
 
-    This can be very help full to understand the behaviour of
-    the multi-exponential function and to test the TSA on a known
+    This can be very helpfull to understand the behaviour of
+    the multi-exponential function and to test the TSA on known
     timescales to reproduce the timescale spectrum.
 
     Parameters
     ----------
-    in_json_file: str, path to json file with parameters for multi-exp function
+    in_json_file: str,
+        Path to json file with parameters for multi-exp function
         These parameters are:
-            offset: s_0 in the multi-exp function
+            offset: list of s_0 in the multi-exp function
             timescales: list of positions of timescales tau_k (log-spaced)
             amplitude: list of size of each of the timescales
-            n_steps: length of exp function
-            sigma: standard deviation for Gaussian noise rugging the data
+            n_steps: number of frames/steps to generate
+            sigma: standard deviation for Gaussian noise/rugging the data
 
         Multiple observables can be generated into a single file
-        by providing lists for each parameter.
-    output_path: str, path to output directory (default: current directory)
-    output_file: str, name of output file with generated time traces
-            (default: 'multi_exp_function_example.txt')
+        by providing lists for each parameter, mimicing the observation
+        of several features in a system.
+    output_path: str, default=None
+        Path to output directory
+        If None given, current directory will be used
+    output_file: str, default='multi_exp_function_example.txt'
+        Name of output file with generated time traces
 
     Return
     ------
-    data_points: np.array, reconstructed multi-exponential function
+    data_points: np.array,
+        reconstructed multi-exponential function
 
     Example:
     --------
@@ -202,7 +186,7 @@ def generate_multi_exp_timetrace(
     with open(in_json_file, 'r') as f:
         generate_params = json.load(f)
     for key in ['offset', 'timescales', 'amplitude', 'n_steps', 'sigma']:
-        if key not in generate_params.keys():
+        if key not in generate_params:
             raise KeyError(f"Expected data file to contain '{key}' key!")
 
     offset = generate_params['offset']

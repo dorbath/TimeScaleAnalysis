@@ -14,6 +14,7 @@ def fit_log_periodic_oscillations(
         popt: tuple = None) -> tuple:
     """Fit the time trace with a power law (t^a0) and
     logarithmic oscillations with period tau_log.
+
     A system with hierarchical dynamics may yield equidistant timescales/peaks
     in the timescale spectrum (on a log-time axis).
     This will result in logarithmic oscillations superimposed by a power law
@@ -25,12 +26,16 @@ def fit_log_periodic_oscillations(
 
     Parameters
     ----------
-    log_time_trace: np.array, data points to fit
-            (log-spaced and averaged time trace)
-    times: np.array, log-spaced time
-    fit_range: list, lower and upper boundary of log-fit in [ns]
-            (this improves the fit as many time traces converge at some point)
-    popt: tuple, initial guess of all 6 parameters:
+    log_time_trace: np.array,
+        Data points to fit
+        (log-spaced and averaged time trace)
+    times: np.array,
+        Log-spaced time
+    fit_range: list,
+        Lower and upper boundary of log-fit in [ns]
+        (this improves the fit as many time traces converge at some point)
+    popt: tuple,
+        Initial guess of all 6 parameters:
             (a0, tau, s_a, s_b, s_c, phi)
             a0: exponent of power law
             tau: period of logarithmic oscillations
@@ -38,15 +43,18 @@ def fit_log_periodic_oscillations(
             s_b: amplitude of power law
             s_c: amplitude of logarithmic oscillations
             phi: phase shift of logarithmic oscillations
-    filename: str, name of file to save fit parameters
-            (default: None, no saving)
+    filename: str, default=None
+        Name of file to save fit parameters
     Return
     ------
-    ax1: matplotlib.axes, main plot axis
-    ax_insert: matplotlib.axes, inset plot axis
-    fitParameters: tuple, optimized fit parameters
-            (a0, tau, s_a, s_b, s_c, phi)
-            with their standard deviations from the covariance matrix
+    ax1: matplotlib.axes,
+        Main plot axis
+    ax_insert: matplotlib.axes,
+        Inset plot axis
+    fitParameters: tuple,
+        Optimized fit parameters
+        (a0, tau, s_a, s_b, s_c, phi)
+        with their standard deviations from the covariance matrix
     """
 
     def _fit_log_osc(x, a0, tau, sa, sb, sc, phi) -> np.array:
@@ -136,22 +144,32 @@ def get_population_heatmaps(
         valueRange: list = None) -> tuple:
     """
     Get time-dependent populations for all observables.
+
     For each time bin (x-axis), a population distribution is derived
     for the observable values (y-axis). The entries in each bin (z-axis)
-    are normalized for the respective time bin, i.e., the population
-    is restricted to [0,1].
+    are normalized for the respective time bin.
+    Therefore, the population is restricted to [0,1],
+    i.e., it gives a probability to be at time t in position y.
 
     Parameters
     ----------
-    preP: preProcessing object, used to access data
-    lowBound: float, lower boundary of time range for heatmap (default: 1e0)
-    upBound: float, upper boundary of time range for heatmap (default: 1e3)
+    preP: preProcessing object,
+        Used to access data
+    lowBound: float, default=1.0
+        Lower boundary of time range for heatmap
+    upBound: float, default=1000.0
+        Upper boundary of time range for heatmap
+    valueRange: list or np.array, default=None
+        Binning range of data values (y-axis)
 
     Return
     ------
-    time_bins: np.array, edges of time bins used for the heatmap
-    value_bins: np.array, edges of value bins used for the heatmap
-    heatmaps: list of np.array, each array is a 2D histogram for one observable
+    time_bins: np.array,
+        Edges of time bins used for the heatmap
+    value_bins: np.array,
+        Edges of value bins used for the heatmap
+    heatmaps: list of np.array,
+        Each array is a 2D histogram for one observable
     """
     def _get_values_single_time_bin(
             t_bin: int,

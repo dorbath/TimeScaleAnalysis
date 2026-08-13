@@ -19,27 +19,38 @@ def derive_tsa_spectrum(
         initValues: np.array = None,
         posVal: bool = False) -> np.array:
     """Perform multi-exponential fit to get spectrum of TSA.
+
     The fit function has the form: S(t) = SUM s_k exp(-t/tau_k)
     where the amplitudes s_k are fitted for given lag rates (1/tau_k).
     Peaks in s_k(tau_k) reveal dynamical processes at timescale tau_k!
 
     Parameters
     ----------
-    data_points: np.array, data time trace of observable to fit
-    data_err: np.array, time trace of standard error of the mean
-    times: np.array, time array for fit
-    n_steps: int, number of steps in data
-    regPara: float or list, regularization parameter weights entropy term
-    nR: int, number of fit amplitudes
-    lag_rates: np.array, log-spaced array of lag rates (1/tau_k)
-    initValues: np.array, entries for initial guess of amplitudes,
-                if None: zeros are used (default: None)
-    posVal: bool, set True to only use positive fit amplitudes (default: False)
+    data_points: np.array,
+        Data time trace of observable to fit
+    data_err: np.array,
+        Time trace of standard error of the mean
+    times: np.array,
+        Time array for fit
+    n_steps: int,
+        Number of steps in data
+    regPara: float or list,
+        Regularization parameter weights entropy term
+    nR: int,
+        Number of fit amplitudes
+    lag_rates: np.array,
+        Log-spaced array of lag rates (1/tau_k)
+    initValues: np.array, default=None
+        Entries for initial guess of amplitudes, if None: zeros are used
+    posVal: bool, default=False
+        Set True to only use positive fit amplitudes
 
     Return
     ------
-    fit_result: np.array, fitted amplitudes for each lag_rate
-    P_Bayes: float, Bayesian posterior probability for given regPara
+    fit_result: np.array,
+        Fitted amplitudes for each lag_rate
+    P_Bayes: float,
+        Bayesian posterior probability for given regPara
     """
     # Nonlinear enhancement factor: see doi.org/10.1366/000370205364
     entropy_guess = (np.amax(data_points)-np.amin(data_points)) / (100*nR)
@@ -114,25 +125,30 @@ class TimeScaleAnalysis:
 
     Parameters
     ----------
-    data_file: str, directory to preprocessed data file (json format)
-               It contains the mean, sem of all studied observables
-               as well as the time array.
-    fit_n_decades: int, number of decades that are covered by the
-               timescale analysis.
-    data_mean: np.array (N, M), contains the time-dependent mean
-               of all observables. (N,) not yet supported!
-    data_sem: np.array (N, M), contains the time-dependent
-              standard error of the mean. (N,) not yet supported!
-    n_steps: int, number of steps in the simulation
-    times: np.array, contains each timestep
+    data_file: str,
+        Directory to preprocessed data file (json format).
+        It contains the mean, sem of all studied observables
+        as well as the time array.
+    fit_n_decades: int,
+        Number of decades that are covered by the timescale analysis.
+    data_mean: np.array of shape (N, M),
+        Contains the time-dependent mean of all observables.
+    data_sem: np.array of shape (N, M),
+        Contains the time-dependent standard error of the mean.
+    n_steps: int,
+        Number of steps in the simulation
+    times: np.array,
+        Contains each timestep
     spectrum: np.array (2, X),
-              first column contains log-spaced timesteps (10 per decade)
-              second column contains the fitted timescale amplitudes
+        First column contains log-spaced timesteps (10 per decade).
+        Second column contains the fitted timescale amplitudes.
 
     Kwargs
     ------
-    temp_mean: np.array, mean data of single observable used in fit
-    temp_sem: np.array, sem data of single observable used in fit
+    temp_mean: np.array,
+        Mean data of single observable used in fit
+    temp_sem: np.array,
+        Sem data of single observable used in fit
 
     Example:
     --------
@@ -226,19 +242,22 @@ class TimeScaleAnalysis:
 
         Parameters
         ----------
-        iterations: int, number of times to perform interpolation,
-                    each iteration doubles the number of frames
+        iterations: int, default=1
+            Number of times to perform interpolation,
+            each iteration doubles the number of frames
         """
         def interpolation_step(interpArr: np.array) -> np.array:
             """Interpolate neighboring frames by average
 
             Parameters
             ----------
-            interpArr: np.array, array to interpolate of shape (N,1) or (N,M)
+            interpArr: np.array,
+                Array to interpolate of shape (N,1) or (N,M)
 
             Return
             ------
-            np.array, interpolated array of shape (2N-1,M)
+            np.array,
+                Interpolated array of shape (2N-1,M)
             """
             interpArr = np.asarray(interpArr)
             if interpArr.ndim == 1:
@@ -276,17 +295,20 @@ class TimeScaleAnalysis:
             self.n_steps = len(self.times)
 
     def log_space_data(self, target_n_steps: int) -> None:
-        """Convert the linear data set into a log-spaced one
+        """Convert the linear data set into a log-spaced one.
+
         Perfect log-spacing is not possible, since the frames are integers
-        and thus for the first few decades the log-spacing is more linear.
-        For alter decades the spacing is perfectly log-spaced.
+        and thus for the first few decades the log-spacing is more linear
+        than in latter ones.
+        For later decades the spacing is perfectly log-spaced.
         Reducing 'target_n_steps' or using 'interpolation_step' can improve
         the log-spacing for the first decades.
 
         Parameters
         ----------
-        target_n_steps: int, used in np.geomspace,
-                        actual number of frames is always below this value
+        target_n_steps: int,
+            Tagert number of log-spaced frames used in np.geomspace,
+            actual number of frames is always below this value
         """
         log_spaced_index_mask = np.unique(
             np.geomspace(1, self.n_steps,
@@ -305,39 +327,43 @@ class TimeScaleAnalysis:
         self.times = self.times[log_spaced_index_mask]
         self.n_steps = len(log_spaced_index_mask)
 
-    def extend_timeTrace(self, frac_decade: float = 5/10) -> None:
-        """Append one order of magnitude to the data by a constant value
-        derived as average over 'frac_decade' decade.
-        On a log-scale, the final half decade is rather short.
+    def extend_timeTrace(self, frac_decade: float = 0.5) -> None:
+        """Append one order of magnitude to the data by a constant value.
+
+        The constant value is derived as average over a fraction
+        of the time trace, given as `frac_decade * t_max`.
+        The number of frames appended is the same as in the final
+        decade in the data.
 
         Parameters
         ----------
-        frac_decade: float, fraction of decade used for averaging,
-                     must be in range (0,1), (Default: 5/10 = 1/2 decade)
-                     Clarification:
-                     1/10 = 1 decade, 1/100 = 2 decades, 9/10 = 0.1 decades
+        frac_decade: float, default=0.5
+            Fraction of the final time frame used for the derivation of the
+            constant extended value. Must be in range (0,1).
+            E.g., 0.5 averages over latter half of the time trace
+            (On log-axis this is rather short).
+            0.1 averages over the final decade (90% of all frames)
         """
-        # Create copys to avoid overwriting of original data during appending
         if frac_decade <= 0 or frac_decade >= 1:
             raise ValueError("'frac_decade' must be in range (0,1)!")
+
+        # Create copys to avoid overwriting of original data during appending
         times = self.times
         data_mean = np.asarray(self.data_mean)
         data_sem = np.asarray(self.data_sem)
 
-        N, _ = data_mean.shape
-
         # Get number of frames to append and frame index from which
         # the final half decade begins.
-        n_frames_perOrder = N - np.where(times > times[-1]/10)[0][0]
-        low_bound_frame = len(np.where(times >= times[-1]*frac_decade)[0])
+        n_frames_perOrder = np.count_nonzero( times > (times[-1]/10) )
+        avg_frac_decade_mask = times >= (times[-1] * frac_decade)
+        n_avg_frames = np.count_nonzero(avg_frac_decade_mask)
 
         # Perform averages of mean and SEM
-        temp_append_mean = np.mean(data_mean[-low_bound_frame:], axis=0)
+        temp_append_mean = np.mean(data_mean[avg_frac_decade_mask], axis=0)
         temp_append_sem = np.sqrt(
-            np.sum(np.square(data_sem[-low_bound_frame:]), axis=0)
-            / low_bound_frame**2
-        )
-
+            np.sum(np.square(data_sem[avg_frac_decade_mask]), axis=0)
+            ) / n_avg_frames
+        
         data_mean = np.concatenate(
             [data_mean, np.tile(temp_append_mean, (n_frames_perOrder, 1))],
             axis=0
@@ -361,18 +387,25 @@ class TimeScaleAnalysis:
                     posVal: bool = False,
                     initValues: np.array = None) -> None:
         """Perform the timescale analysis S(t) = SUM a_k exp(-t/tau_k)
+
         The lag rates (1/tau_k) are log-spaced with 10 points per decade
         and the amplitudes a_k are fitted, revealing dynamical processes.
 
         Parameters
         ----------
-        regPara: float or list, regularization parameter weights entropy term
-                (if list, a search for optimal regPara is performed
-                using a Bayesian criterion; doi.org/10.1366/0003702077797014)
-        startTime: float, fastest timescale used in fit
-        powVal: bool, set True to only use positive fit amplitudes
-        initValues: np.array, entries for initial guess of amplitudes,
-                    if None: zeros are used"""
+        regPara: float or list,
+            Regularization parameter weights entropy term
+            (if list, a search for optimal regPara is performed
+            using a Bayesian criterion; doi.org/10.1366/0003702077797014)
+        startTime: float, default=1.0
+            Fastest timescale used in fit.
+            Usually lower boundary of your time frames.
+        powVal: bool, default=False
+            Set True to only use positive fit amplitudes
+        initValues: np.array, default=None
+            Entries for initial guess of amplitudes,
+            if None: zeros are used
+        """
         # Setup fit
         nR = self.fit_n_decades*10 + 1  # number of fit amplitudes
         lag_rates = np.zeros(nR, dtype=np.float64)
@@ -431,7 +464,8 @@ def derive_optimal_regularization(
         startTime: float = 1e0,
         sigma: float = None,
         posVal: bool = False):
-    """Derive the optimal regularization parameter for the TSA
+    """Derive the optimal regularization parameter for the TSA.
+
     The optimal value is said to be where the Bayesian posterior probability
     has its maximum. (see doi: 10.1366/000370207779701460)
     This so-called Bayes criterion, prevents overfitting while maximizing
@@ -439,18 +473,23 @@ def derive_optimal_regularization(
 
     Parameters
     ----------
-    tsa: TimeScaleAnalysis object, contains all data for TSA fit
-    idxObs: int, index of observable in TimeScaleAnalysis
-    regPara: np.array or list, regularization parameter values to scan
-    startTime: float, first timescale used in fit (default: 1e0)
-    sigma: float, sigma for Gaussian smoothing of data before fit
-           (default: None)
-    posVal: bool, set True to only use positive fit amplitudes (default: False)
+    tsa: TimeScaleAnalysis object,
+        contains all data for TSA fit
+    idxObs: int,
+        index of observable in TimeScaleAnalysis
+    regPara: np.array or list,
+        regularization parameter values to scan
+    startTime: float, default=1.0
+        First timescale used in fit (default: 1e0)
+    sigma: float, default=None
+        sigma for Gaussian smoothing of data before fit
+    posVal: bool, default=False
+        Set True to only use positive fit amplitudes (default: False)
 
     Return
     ------
     Bayes_probabilities: np.arrays,
-            Bayesian probabilities for the given 'regPara' values
+        Bayesian probabilities for the given 'regPara' values
     """
     if sigma:
         temp_mean = utils.gaussian_smooth(tsa.data_mean[:, idxObs], sigma)

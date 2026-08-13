@@ -13,10 +13,14 @@ def save_npArray(
 
     Parameters
     ----------
-    array: np.array, 1D or 2D array to be saved
-    folder_path: str, path to folder in which file is stored
-    file_name: str, name of file,
-    comment: str, add description of file to header
+    array: np.array,
+        1D or 2D array to be saved
+    folder_path: str,
+        Path to folder in which file is stored
+    file_name: str,
+        Name of output file
+    comment: str, default=' '
+        Add description of file to header
     """
     os.makedirs(folder_path, exist_ok=True)
     file_path = os.path.join(folder_path, f'{file_name}')
@@ -29,11 +33,12 @@ def load_npArray(file_name: str) -> np.array:
 
     Parameters
     ----------
-    file_name: str, path and name of file
+    file_name: str,
+        Path and name of file
 
     Return
     ------
-    loaded array as np.array
+    Loaded array as np.array
     """
     if not isfile(file_name):
         raise FileNotFoundError(
@@ -48,18 +53,23 @@ def save_json(output_dic: dict,
               output_path: str,
               output_file: str = 'data_dic') -> str:
     """Save a dictionary as json file in 'output_path/preprocessed_data.json'.
+
     If this file already exists, add a counter to the file name
     to avoid overwriting an exisiting file.
 
     Parameters
     ----------
-    output_dic: dict, dictionary to be saved as json file
-    output_path: str, path to folder in which file is stored
-    output_file: str, json file name (default: 'data_dic')
+    output_dic: dict,
+        Dictionary to be saved as json file
+    output_path: str,
+        Path to folder in which file is stored
+    output_file: str,
+        json file name (default: 'data_dic')
 
     Return
     ------
-    output_file: str, path to saved json file
+    output_file: str,
+        Path to saved json file
     """
     if isfile(f'{output_path}/{output_file}.json'):
         print(f"Output file {output_path}/{output_file}.json already exists! "

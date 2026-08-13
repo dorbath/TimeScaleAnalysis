@@ -220,7 +220,7 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
             tsa.spectrum,
             tsa.times
         )
-        ax1.set_xlim(1e0, 1e4)
+        ax1.set_xlim(1e0, 1e6)
         ax1.set_xlabel(r'$t/\tau_k$ [ns]')
         ax1.set_ylabel(f'{plotting.pretty_label(temp_label, prefix="r")}(t)')
         plotting.save_fig(f'{output_path}/timescale_analysis_{temp_label}.pdf')
@@ -307,20 +307,6 @@ def main(data_path, sim_file, label_file, fit_n_decades, output_path):
         )
     )
     ###########################################################################
-
-    #ensemble_averaged_change = []
-    ## Derive ensemble average change (for each column/distance in cluster)
-    #temp_ensemble_change = utils.calculate_ensemble_average_change(tsa.quant_data_arr.to_numpy(), abs_val=False)
-    #cluster_ensemble_change.append(temp_ensemble_change)
-    #ensemble_averaged_change.append(np.mean(cluster_ensemble_change, axis=0))
-    ## Plot ensemble averaged change
-    #for idxE, ens in enumerate(ensemble_averaged_change):
-    #    plt.plot(tsa.times[np.where(tsa.times*1e9 <= 1e4)]*1e9, utils.gaussian_smooth(ens, 6), label=f'C{idxE+1}', lw=1.3)
-    #plt.gca().set_xscale('symlog', subs=[2, 3, 4, 5, 6, 7, 8, 9], linthresh=0.001)
-    #plt.gca().set_xlim(1e-1, 1e4)
-    #plt.gca().set_ylim(-0.15, 0.15)
-    #pplt.legend(outside='top', ncols=4, fontsize=7)
-    #utils.save_fig(f'{output_path}/ensemble_averaged_change_PDZ3.pdf')
 
 
 if __name__ == '__main__':

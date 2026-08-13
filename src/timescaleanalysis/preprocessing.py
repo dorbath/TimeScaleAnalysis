@@ -14,23 +14,33 @@ class Preprocessing:
 
     Parameters
     ----------
-    data_dir: str, directory to studied data where all files that fullfil
-            data_dir* (path/to/file*) are used
-    data_arr: list, list of loaded trajectories (each trajectory is a np.array)
-    data_mean: np.array, mean of loaded trajectories
-    data_sem: np.array, standard error of the mean of loaded trajectories
-    n_steps: int, maximum number of steps in the data
-    folder_prefix: str, prefix of folder path to data
-    input_directories: list, list of input files/trajectories in folder_prefix
-             with correct prefix
-    labels_lst: list, list of labels for each observable in the data
+    data_dir: str,
+        Directory to studied data where all files that fullfil
+        data_dir* (path/to/file*) are used
+    data_arr: list,
+        List of loaded trajectories (each trajectory is a np.array)
+    data_mean: np.array,
+        Mean of loaded trajectories
+    data_sem: np.array,
+        Standard error of the mean of loaded trajectories
+    n_steps: int,
+        Maximum number of steps in the data
+    folder_prefix: str,
+        Prefix of folder path to data
+    input_directories: list,
+        List of input files/trajectories in folder_prefix with correct prefix
+    labels_lst: list,
+        List of labels for each observable in the data
 
     Attributes
     ----------
-    sim_file: str, directory to file with simulation parameters
-            (usually .mdp file, entries 'dt = ' and 'nstxtcout = ' are needed)
-    time: array, time vector of the data
-    label_file: str, file directory with label for each observable in the data
+    sim_file: str,
+        Directory to file with simulation parameters
+        (usually .mdp file, entries 'dt = ' and 'nstxtcout = ' are needed)
+    time: array,
+        Time vector of the data
+    label_file: str,
+        File directory with label for each observable in the data
     """
     DEFAULTS = {
         "sim_file": None,
@@ -60,9 +70,11 @@ class Preprocessing:
     def load_absorption_spectra(self) -> None:
         """Load single absorption spectrum of experimental
         data and corresponding times and frequencies.
+
         First line: column names (e.g. frequencies)
         First column: time points
         All other columns: experimental observable (e.g. absorption)
+        Note, entry [0,0] is ignored
         """
         if not isfile(self.input_directories[0]):
             raise FileNotFoundError(
@@ -86,6 +98,7 @@ class Preprocessing:
                           n_traj_conc: int = None,
                           averaged: bool = False):
         """Load trajectories from 'data_dir' path
+
         There are three ways of loading data:
             1) Multiple trajectories, each is assumed to be a
                     separate time trace. (default)
@@ -96,11 +109,13 @@ class Preprocessing:
 
         Parameters
         ----------
-        n_traj_conc: int, number of trajectories that are concatenated in file.
-                Trajectories must be of same length (default: None)
-        averaged: bool, True if the input trajectory is already averaged.
-                Trajectory must contain two columns, 1st with data points,
-                2nd with standard error of the mean (SEM). (default: False)
+        n_traj_conc: int, default=None
+            Number of trajectories that are concatenated in file.
+            Trajectories must be of same length
+        averaged: bool, default=False
+            True if the input trajectory is already averaged.
+            Trajectory must contain two columns, 1st with data points,
+            2nd with standard error of the mean (SEM).
         """
         def _derive_average_trajectory() -> None:
             """"Average data for each column"""
@@ -120,21 +135,26 @@ class Preprocessing:
                               averaged: bool = False,
                               verbose: bool = False) -> np.array:
             """Load a single trajectory file
+
             Delimiter is assumed to be whitespace,
             comment lines starting with '#' are ignored.
 
             Parameters
             ----------
-            file_name: str, name of single file/trajectory in folder_dir
-            precision: np.float16/32/64, precision of loaded data
-                    (default: np.float32)
-            averaged: bool, True if the input trajectory is already averaged.
-            verbose: bool, print loading information (default: False)
+            file_name: str,
+                Name of single file/trajectory in folder_dir
+            precision: np.float16/32/64, default=np.float32
+                Precision of loaded data
+            averaged: bool, default=False
+                True if the input trajectory is already averaged.
+            verbose: bool, default=False
+                Print loading information (default: False)
 
             Return
             ------
-            data_np: np.array, contains loaded data.
-                     Each column corresponds to one observable
+            data_np: np.array,
+                Array which contains loaded data.
+                Each column corresponds to one observable
             """
             if precision not in (np.float16, np.float32, np.float64):
                 raise TypeError(
@@ -257,8 +277,10 @@ class Preprocessing:
 
         Parameters
         ----------
-        insert_nan: bool, (false)-> extend final frame of trajectory,
-                          (true)-> append np.nan values (default)"""
+        insert_nan: bool, default=True
+            (true)-> append np.nan values,
+            (false)-> extend final frame of trajectory
+        """
 
         def _reshape_single_trajectory(
                 trajectory: np.array,
@@ -269,14 +291,18 @@ class Preprocessing:
 
             Parameters
             ----------
-            trajectory: array, single trajectory
-            n_steps: int, length of longest trajectory
-            insert_nan: bool, (false)-> extend final frame of trajectory,
-                              (true)-> append np.nan values (default)
+            trajectory: array,
+                Single trajectory
+            n_steps: int,
+                Length of longest trajectory
+            insert_nan: bool, default=True
+                (true)-> append np.nan values (default),
+                (false)-> extend final frame of trajectory
 
             Return
             ------
-            temp_np: np.array, reshaped trajectories of same length
+            temp_np: np.array,
+                Reshaped trajectories of same length
             """
 
             temp_np_traj = np.asarray(trajectory, dtype=np.float32)

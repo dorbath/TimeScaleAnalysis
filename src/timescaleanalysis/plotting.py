@@ -15,12 +15,16 @@ def plot_TSA(
     
     Parameters
     ----------
-    data_mean: np.array, mean values of the time trace used for TSA fit
-    data_sem: np.array, standard error of the mean values of the time trace
-    spectrum: np.array, timescale spectrum with
+    data_mean: np.array,
+        Mean values of the time trace used for TSA fit
+    data_sem: np.array,
+        Standard error of the mean values of the time trace
+    spectrum: np.array,
+        Timescale spectrum with
             1st column: times tau_k
             2nd column: amplitudes s_n of observable
-    times: np.array, log-spaced times
+    times: np.array,
+        Log-spaced times values
     """
     if spectrum.ndim != 2 or spectrum.shape[1] < 2:
         raise ValueError(
@@ -85,10 +89,13 @@ def plot_dynamical_content(
 
     Parameters
     ----------
-    times: np.array, log-spaced times corresponding to tau_k
-    dynamic_content: np.array, dynamical content D(tau_k)
-    ax: matplotlib.axes, axis to plot on. This is important if
-            multiple dynamical contents are plotted in the same figure.
+    times: np.array,
+        Log-spaced times corresponding to tau_k
+    dynamic_content: np.array,
+        Dynamical content D(tau_k)
+    ax: matplotlib.axes, default=None
+        Axis to plot on. This is only important if
+        multiple dynamical contents are plotted in the same figure.
     """
     if ax is None:
         fig, ax = plt.subplots()
@@ -107,9 +114,12 @@ def plot_2D_histogram(xVal, yVal, zVals) -> None:
 
     Parameters
     ----------
-    xVal: np.array, edges of bins for x-axis
-    yVal: np.array, edges of bins for y-axis
-    zVals: np.array, 2D array of values for each bin defined by xVal and yVal
+    xVal: np.array,
+        Edges of bins for x-axis
+    yVal: np.array,
+        Edges of bins for y-axis
+    zVals: np.array,
+        2D array of values for each bin defined by xVal and yVal
     """
     if len(xVal) != zVals.shape[1]+1 or len(yVal) != zVals.shape[0]+1:
         raise ValueError(
@@ -143,14 +153,21 @@ def get_alpha_cmap(
 
 
 def pretty_label(label: str, prefix: str = 'd') -> str:
-    """Make y-axis label prettier for scientific plotting
+    """Make y-axis label prettier for scientific plotting.
+
     In many cases, the observable is a distance or angle with the label
     being stored as X_Y (e.g. atoms X,Y)
 
     Parameters
     ----------
-    label: str, label to be made more scientific
-    prefix: str, prefix to be added to label (e.g. 'd' for distance)
+    label: str,
+        Label to be made more scientific
+    prefix: str, default='d'
+        Prefix to be added to label (e.g. 'd' for distance)
+
+    Return
+    ------
+    Stylized label
     """
     if '_' in label:
         label = '('+label+')'
@@ -168,8 +185,15 @@ def _log_axis(
 
     Parameters
     ----------
-    ax: matplotlib.axes, axis to be transformed
-    axis: str, 'x' or 'y', defines which axis is transformed"""
+    ax: matplotlib.axes,
+        Plotting axis to be transformed
+    axis: str,
+        'x' or 'y', defines which axis is transformed
+    subs: list, default=[2, 3, 4, 5, 6, 7, 8, 9]
+        Ticks that are shown
+    linthresh: float, default=0.01
+        Threshold for linear region around zero
+    """
     if axis == 'xy' or axis == 'yx':
         ax.set_xscale('symlog', subs=subs, linthresh=linthresh)
         ax.set_yscale('symlog', subs=subs, linthresh=linthresh)

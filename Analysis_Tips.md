@@ -79,6 +79,10 @@ You can decrease the number of amplitudes (to 5 per decade) if you only want a r
 estimation as it will speed up the derivations a lot. However, the temporal
 resolution will suffer. 
 
+In either way, `tsa.perform_tsa()` does not allow you to directly change the number
+of amplitudes. However, you can use the adjusted first few lines of that function
+and call `timescales.derive_tsa_spectrum` separately.
+
 
 
 ## Compuational speed up of timescale fit
