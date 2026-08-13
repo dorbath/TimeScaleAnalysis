@@ -327,25 +327,25 @@ class TimeScaleAnalysis:
         self.times = self.times[log_spaced_index_mask]
         self.n_steps = len(log_spaced_index_mask)
 
-    def extend_timeTrace(self, frac_decade: float = 0.5) -> None:
+    def extend_timeTrace(self, frac_tmax: float = 0.5) -> None:
         """Append one order of magnitude to the data by a constant value.
 
         The constant value is derived as average over a fraction
-        of the time trace, given as `frac_decade * t_max`.
+        of the time trace, given as `frac_tmax * t_max`.
         The number of frames appended is the same as in the final
         decade in the data.
 
         Parameters
         ----------
-        frac_decade: float, default=0.5
+        frac_tmax: float, default=0.5
             Fraction of the final time frame used for the derivation of the
             constant extended value. Must be in range (0,1).
             E.g., 0.5 averages over latter half of the time trace
             (On log-axis this is rather short).
             0.1 averages over the final decade (90% of all frames)
         """
-        if frac_decade <= 0 or frac_decade >= 1:
-            raise ValueError("'frac_decade' must be in range (0,1)!")
+        if frac_tmax <= 0 or frac_tmax >= 1:
+            raise ValueError("'frac_tmax' must be in range (0,1)!")
 
         # Create copys to avoid overwriting of original data during appending
         times = self.times
@@ -355,13 +355,13 @@ class TimeScaleAnalysis:
         # Get number of frames to append and frame index from which
         # the final half decade begins.
         n_frames_perOrder = np.count_nonzero( times > (times[-1]/10) )
-        avg_frac_decade_mask = times >= (times[-1] * frac_decade)
-        n_avg_frames = np.count_nonzero(avg_frac_decade_mask)
+        avg_frac_tmax_mask = times >= (times[-1] * frac_tmax)
+        n_avg_frames = np.count_nonzero(avg_frac_tmax_mask)
 
         # Perform averages of mean and SEM
-        temp_append_mean = np.mean(data_mean[avg_frac_decade_mask], axis=0)
+        temp_append_mean = np.mean(data_mean[avg_frac_tmax_mask], axis=0)
         temp_append_sem = np.sqrt(
-            np.sum(np.square(data_sem[avg_frac_decade_mask]), axis=0)
+            np.sum(np.square(data_sem[avg_frac_tmax_mask]), axis=0)
             ) / n_avg_frames
         
         data_mean = np.concatenate(
